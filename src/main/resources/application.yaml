@@ -1,3 +1,12 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: citas-medicas-back
+  datasource:
+    url: jdbc:oracle:thin:@//localhost:1521/XE
+    username: PROYECTOPLSQL
+    password: ${DB_PASSWORD}
+app:
+  jwt:
+    secret: ${JWT_SECRET}
