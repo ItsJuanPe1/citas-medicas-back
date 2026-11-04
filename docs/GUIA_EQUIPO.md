@@ -14,7 +14,7 @@ Sistema de citas médicas (Oracle + PL/SQL, Spring Boot, React). Esta guía expl
 | Auditoría | Las reservas y cancelaciones quedan en `LOG_AUDITORIAS`. |
 | Pantallas | Reservar cita, Citas, Médicos, Todas las citas, Auditoría, Mi agenda (médico). |
 
-**Pendiente (reparto en la sección 8):** HU03 a HU10.
+**Hecho:** HU01, HU02 y HU03, más horarios del médico (`PKG_AGENDAS`), perfil (`PKG_PERFILES`) y estado NO_ASISTIO (job cada minuto). **Pendiente (reparto en la sección 8):** HU04 a HU10.
 
 ## 2. Reglas que no se rompen
 
@@ -86,7 +86,10 @@ Más usuarios: `SELECT USERNAME, ID_ROL, ID_ENTIDAD FROM USUARIOS;`
 | `GET /api/pacientes?q=` | recepción, superadmin | Buscar paciente |
 | `GET /api/admin/citas` | superadmin, gerente | Todas las citas con filtros |
 | `GET /api/admin/auditoria` | superadmin | Últimos 100 movimientos |
-| `GET /api/medico/citas?historial=` | médico | Agenda del médico (base de HU03) |
+| `POST /api/historias` | médico, superadmin | HU03: registra la consulta (diagnóstico + notas) y deja la cita ATENDIDA |
+| `GET/POST/DELETE /api/horario` | médico, superadmin | Franjas de cita del médico (`PKG_AGENDAS`) |
+| `GET/PUT /api/perfil` | cualquier usuario | Ver perfil y editar teléfono/correo (`PKG_PERFILES`) |
+| `GET /api/medico/citas?historial=` | médico | Agenda del médico, incluye diagnóstico y notas de citas atendidas |
 
 ## 6. Receta para agregar una HU
 
@@ -143,12 +146,12 @@ Más usuarios: `SELECT USERNAME, ID_ROL, ID_ENTIDAD FROM USUARIOS;`
 
 | Quién | HU | Notas |
 |---|---|---|
-| Persona 1 | HU03 + HU04 | `PKG_HISTORIAS_CLINICAS` + trigger BEFORE INSERT. Se parte de `MiAgenda.jsx`: agregar el botón "Registrar consulta" en cada cita PROGRAMADA. |
+| Persona 1 | HU04 | Trigger BEFORE INSERT sobre `HISTORIA_CLINICA` (verifica que la cita esté PROGRAMADA). HU03 ya está hecha en `PKG_HISTORIAS_CLINICAS.REGISTRAR_CONSULTA`; el trigger debe convivir con ese procedimiento. |
 | Persona 2 | HU05 + HU06 | `PKG_GESTION_MEDICAMENTOS` + trigger de stock. Reemplaza la pantalla provisional `Inicio.jsx` del farmacéutico. |
 | Persona 3 | HU07 + HU08 | VPD/RLS y trigger de auditoría sobre `HISTORIA_CLINICA`. El trigger se puede empezar ya. |
 | Persona 4 | HU09 + HU10 | Cancelación masiva (BULK COLLECT/FORALL) en `PKG_GESTION_CITAS`, y reporte para el gerente. |
 
-HU05 necesita la historia clínica de HU03: coordinar para que la Persona 1 suba primero la creación de historias, aunque sea sin pantalla.
+HU05 ya puede apoyarse en la historia clínica creada por HU03 (`ID_HISTORIA`).
 
 ## 9. Git
 
