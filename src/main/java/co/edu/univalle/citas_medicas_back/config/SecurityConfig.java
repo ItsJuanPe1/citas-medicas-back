@@ -44,7 +44,10 @@ public class SecurityConfig {
                         // Administracion: consultas de solo lectura
                         .requestMatchers("/api/admin/citas").hasAnyRole("SUPERADMIN", "GERENTE")
                         .requestMatchers("/api/admin/auditoria").hasRole("SUPERADMIN")
-                        // Historias clinicas (HU03, HU04): pendiente
+                        // Historias clinicas (HU03, HU04): registrar consulta
+                        .requestMatchers("/api/historias", "/api/historias/**").hasAnyRole("MEDICO", "SUPERADMIN")
+                        // Horarios del medico (franjas de cita)
+                        .requestMatchers("/api/horario", "/api/horario/**").hasAnyRole("MEDICO", "SUPERADMIN")
                         // Medicamentos y farmacia (HU05, HU06): pendiente
                         // ==========================================================
 

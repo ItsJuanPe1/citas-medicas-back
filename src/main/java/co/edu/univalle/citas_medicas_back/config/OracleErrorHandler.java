@@ -27,7 +27,7 @@ public class OracleErrorHandler {
     private static final Logger log = LoggerFactory.getLogger(OracleErrorHandler.class);
 
     // Rangos por paquete: citas 20001-20099, historias 20100-20199, medicamentos
-    // 20200-20299
+    // 20200-20299, agendas 20300-20399, perfiles 20400-20499
     private static final Map<Integer, HttpStatus> ESTADOS = Map.ofEntries(
             // PKG_GESTION_CITAS
             Map.entry(20001, HttpStatus.CONFLICT), // medico/horario ocupado
@@ -38,9 +38,33 @@ public class OracleErrorHandler {
             Map.entry(20006, HttpStatus.NOT_FOUND), // cita no existe
             Map.entry(20007, HttpStatus.CONFLICT), // cita no cancelable
             Map.entry(20008, HttpStatus.FORBIDDEN), // cita ajena
-            Map.entry(20009, HttpStatus.BAD_REQUEST) // motivo de cancelacion obligatorio
-    // PKG_HISTORIAS_CLINICAS: agregar aqui (20100+)
-    // PKG_GESTION_MEDICAMENTOS: agregar aqui (20200+)
+            Map.entry(20009, HttpStatus.BAD_REQUEST), // motivo de cancelacion obligatorio
+            // PKG_HISTORIAS_CLINICAS (20100+)
+            Map.entry(20101, HttpStatus.NOT_FOUND), // cita no existe
+            Map.entry(20102, HttpStatus.CONFLICT), // cita no esta PROGRAMADA
+            Map.entry(20103, HttpStatus.FORBIDDEN), // cita de otro medico
+            Map.entry(20104, HttpStatus.BAD_REQUEST), // diagnostico obligatorio
+            Map.entry(20105, HttpStatus.BAD_REQUEST), // texto muy largo
+            Map.entry(20106, HttpStatus.CONFLICT), // cita vencida (horario ya termino)
+            // PKG_AGENDAS (20300+)
+            Map.entry(20301, HttpStatus.BAD_REQUEST), // horario en el pasado
+            Map.entry(20302, HttpStatus.BAD_REQUEST), // rango invalido
+            Map.entry(20303, HttpStatus.BAD_REQUEST), // duracion invalida
+            Map.entry(20304, HttpStatus.BAD_REQUEST), // demasiadas franjas
+            Map.entry(20305, HttpStatus.NOT_FOUND), // medico no existe
+            Map.entry(20306, HttpStatus.CONFLICT), // bloqueado por otra persona
+            Map.entry(20307, HttpStatus.CONFLICT), // cruce con otros horarios
+            Map.entry(20308, HttpStatus.NOT_FOUND), // horario no existe
+            Map.entry(20309, HttpStatus.FORBIDDEN), // horario de otro medico
+            Map.entry(20310, HttpStatus.CONFLICT), // horario con cita
+            // PKG_PERFILES (20400+)
+            Map.entry(20401, HttpStatus.BAD_REQUEST), // sin perfil editable
+            Map.entry(20402, HttpStatus.BAD_REQUEST), // correo invalido
+            Map.entry(20403, HttpStatus.BAD_REQUEST), // telefono invalido
+            Map.entry(20404, HttpStatus.NOT_FOUND), // perfil no existe
+            Map.entry(20405, HttpStatus.CONFLICT) // correo en uso
+    // PKG_GESTION_MEDICAMENTOS (20200+): poner una coma al final de la linea de
+    // arriba y agregar aqui
     );
 
     @ExceptionHandler(DataAccessException.class)
