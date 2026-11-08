@@ -28,12 +28,9 @@ import java.util.List;
 public class AdminController {
 
     public record CitaAdminDto(Long idCita, String paciente, String documento, String medico,
-            String especialidad, LocalDateTime inicio, String estado, String motivo) {
-    }
-
+                               String especialidad, LocalDateTime inicio, String estado, String motivo) {}
     public record LogDto(Long idLog, String usuario, String accion, String tabla, Long idRegistro,
-            String antes, String despues, LocalDateTime fecha) {
-    }
+                         String antes, String despues, LocalDateTime fecha) {}
 
     private final JdbcTemplate jdbc;
 
@@ -43,43 +40,30 @@ public class AdminController {
 
     @GetMapping("/citas")
     public List<CitaAdminDto> citas(@RequestParam(required = false) String estado,
-            @RequestParam(required = false) Long idMedico,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
-        StringBuilder sql = new StringBuilder(
-                """
-                        SELECT c.ID_CITA, p.NOMBRE || ' ' || p.APELLIDO AS PACIENTE, p.DOCUMENTO,
-                               m.NOMBRE || ' ' || m.APELLIDO AS MEDICO, esp.VALOR AS ESPECIALIDAD,
-                               a.FECHA_HORA_INICIO, est.VALOR AS ESTADO, (SELECT REGEXP_SUBSTR(l.VALOR_DESPUES, 'motivo=(.*)$', 1, 1, 'n', 1)
-                                  FROM LOG_AUDITORIAS l
-                                 WHERE l.TABLA_AFECTADA = 'CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
-                                   AND l.ID_REGISTRO = c.ID_CITA AND ROWNUM = 1) AS MOTIVO_CANCELACION
-                          FROM CITAS_MEDICAS c
-                          JOIN PACIENTES p           ON p.ID_PACIENTE = c.ID_PACIENTE
-                          JOIN AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
-                          JOIN MEDICOS m             ON m.ID_MEDICO = a.ID_MEDICO
-                          JOIN PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
-                          JOIN PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = c.ID_ESTADO
-                         WHERE 1 = 1
-                        """);
+                                    @RequestParam(required = false) Long idMedico,
+                                    @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+                                    @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT c.ID_CITA, p.NOMBRE || ' ' || p.APELLIDO AS PACIENTE, p.DOCUMENTO,
+                       m.NOMBRE || ' ' || m.APELLIDO AS MEDICO, esp.VALOR AS ESPECIALIDAD,
+                       c.FECHA_HORA_INICIO, est.VALOR AS ESTADO, (SELECT REGEXP_SUBSTR(l.VALOR_DESPUES, 'motivo=(.*)$', 1, 1, 'n', 1)
+                          FROM LOG_AUDITORIAS l
+                         WHERE l.TABLA_AFECTADA = 'CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
+                           AND l.ID_REGISTRO = c.ID_CITA AND ROWNUM = 1) AS MOTIVO_CANCELACION
+                  FROM CITAS_MEDICAS c
+                  JOIN PACIENTES p           ON p.ID_PACIENTE = c.ID_PACIENTE
+                  JOIN AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
+                  JOIN MEDICOS m             ON m.ID_MEDICO = a.ID_MEDICO
+                  JOIN PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
+                  JOIN PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = c.ID_ESTADO
+                 WHERE 1 = 1
+                """);
         List<Object> args = new ArrayList<>();
-        if (estado != null && !estado.isBlank()) {
-            sql.append(" AND est.VALOR = ? ");
-            args.add(estado);
-        }
-        if (idMedico != null) {
-            sql.append(" AND a.ID_MEDICO = ? ");
-            args.add(idMedico);
-        }
-        if (desde != null) {
-            sql.append(" AND a.FECHA_HORA_INICIO >= ? ");
-            args.add(Timestamp.valueOf(desde.atStartOfDay()));
-        }
-        if (hasta != null) {
-            sql.append(" AND a.FECHA_HORA_INICIO < ? ");
-            args.add(Timestamp.valueOf(hasta.plusDays(1).atStartOfDay()));
-        }
-        sql.append(" ORDER BY a.FECHA_HORA_INICIO DESC FETCH FIRST 200 ROWS ONLY");
+        if (estado != null && !estado.isBlank()) { sql.append(" AND est.VALOR = ? "); args.add(estado); }
+        if (idMedico != null) { sql.append(" AND a.ID_MEDICO = ? "); args.add(idMedico); }
+        if (desde != null) { sql.append(" AND c.FECHA_HORA_INICIO >= ? "); args.add(Timestamp.valueOf(desde.atStartOfDay())); }
+        if (hasta != null) { sql.append(" AND c.FECHA_HORA_INICIO < ? "); args.add(Timestamp.valueOf(hasta.plusDays(1).atStartOfDay())); }
+        sql.append(" ORDER BY c.FECHA_HORA_INICIO DESC FETCH FIRST 200 ROWS ONLY");
 
         return jdbc.query(sql.toString(), (rs, i) -> new CitaAdminDto(
                 rs.getLong("ID_CITA"), rs.getString("PACIENTE"), rs.getString("DOCUMENTO"),
@@ -91,8 +75,8 @@ public class AdminController {
     private static final Pattern P_AGENDA = Pattern.compile("id_agenda=(\\d+)");
     private static final Pattern P_NUEVO = Pattern.compile("nuevo_horario=(\\d+)");
     private static final Pattern P_PACIENTE = Pattern.compile("id_paciente=(\\d+)");
-    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("EEE d MMM HH:mm",
-            Locale.forLanguageTag("es-CO"));
+    private static final DateTimeFormatter FECHA =
+            DateTimeFormatter.ofPattern("EEE d MMM HH:mm", Locale.forLanguageTag("es-CO"));
 
     @GetMapping("/auditoria")
     public List<LogDto> auditoria() {
@@ -109,14 +93,12 @@ public class AdminController {
                         rs.getString("VALOR_ANTES"), rs.getString("VALOR_DESPUES"),
                         rs.getTimestamp("FECHA_HORA").toLocalDateTime()));
 
-        // Reemplaza ids (horario, paciente) por texto legible: nombre y fecha en vez de
-        // numeros.
+        // Reemplaza ids (horario, paciente) por texto legible: nombre y fecha en vez de numeros.
         Set<Long> idsAgenda = new HashSet<>();
         Set<Long> idsPaciente = new HashSet<>();
         for (LogDto l : crudos) {
             for (String t : new String[] { l.antes(), l.despues() }) {
-                if (t == null)
-                    continue;
+                if (t == null) continue;
                 recolectar(P_AGENDA, t, idsAgenda);
                 recolectar(P_NUEVO, t, idsAgenda);
                 recolectar(P_PACIENTE, t, idsPaciente);
@@ -132,13 +114,11 @@ public class AdminController {
 
     private static void recolectar(Pattern p, String texto, Set<Long> destino) {
         Matcher m = p.matcher(texto);
-        while (m.find())
-            destino.add(Long.parseLong(m.group(1)));
+        while (m.find()) destino.add(Long.parseLong(m.group(1)));
     }
 
     private static String legible(String texto, Map<Long, String> horarios, Map<Long, String> pacientes) {
-        if (texto == null)
-            return null;
+        if (texto == null) return null;
         String r = P_PACIENTE.matcher(texto).replaceAll(m -> Matcher.quoteReplacement(
                 "paciente=" + pacientes.getOrDefault(Long.parseLong(m.group(1)), "#" + m.group(1))));
         r = P_AGENDA.matcher(r).replaceAll(m -> Matcher.quoteReplacement(
@@ -150,8 +130,7 @@ public class AdminController {
 
     private Map<Long, String> horarios(Set<Long> ids) {
         Map<Long, String> res = new HashMap<>();
-        if (ids.isEmpty())
-            return res;
+        if (ids.isEmpty()) return res;
         String marcas = ids.stream().map(x -> "?").collect(Collectors.joining(","));
         jdbc.query("""
                 SELECT a.ID_AGENDA, a.FECHA_HORA_INICIO, m.NOMBRE || ' ' || m.APELLIDO AS MEDICO
@@ -166,8 +145,7 @@ public class AdminController {
 
     private Map<Long, String> pacientes(Set<Long> ids) {
         Map<Long, String> res = new HashMap<>();
-        if (ids.isEmpty())
-            return res;
+        if (ids.isEmpty()) return res;
         String marcas = ids.stream().map(x -> "?").collect(Collectors.joining(","));
         jdbc.query("SELECT ID_PACIENTE, NOMBRE || ' ' || APELLIDO FROM PACIENTES WHERE ID_PACIENTE IN (" + marcas + ")",
                 rs -> {

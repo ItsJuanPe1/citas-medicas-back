@@ -23,37 +23,36 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .authorizeHttpRequests(auth -> auth
-                        // Publico
-                        .requestMatchers("/api/health", "/api/auth/login", "/error").permitAll()
+            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+            .authorizeHttpRequests(auth -> auth
+                // Publico
+                .requestMatchers("/api/health", "/api/auth/login", "/error").permitAll()
 
-                        // === Reglas por modulo. Cada HU agrega sus lineas aqui. ===
-                        // Citas (HU01, HU02): SUPERADMIN puede todo
-                        .requestMatchers("/api/agendas/**", "/api/citas", "/api/citas/**")
-                        .hasAnyRole("PACIENTE", "RECEPCIONISTA", "SUPERADMIN")
-                        .requestMatchers("/api/pacientes").hasAnyRole("RECEPCIONISTA", "SUPERADMIN")
-                        // Lista de medicos: la usan quienes reservan o consultan citas
-                        .requestMatchers("/api/medicos")
-                        .hasAnyRole("PACIENTE", "RECEPCIONISTA", "SUPERADMIN", "GERENTE")
-                        // Agenda del medico (base de HU03)
-                        .requestMatchers("/api/medico/**").hasRole("MEDICO")
-                        // Administracion: consultas de solo lectura
-                        .requestMatchers("/api/admin/citas").hasAnyRole("SUPERADMIN", "GERENTE")
-                        .requestMatchers("/api/admin/auditoria").hasRole("SUPERADMIN")
-                        // Historias clinicas (HU03, HU04): registrar consulta
-                        .requestMatchers("/api/historias", "/api/historias/**").hasAnyRole("MEDICO", "SUPERADMIN")
-                        // Horarios del medico (franjas de cita)
-                        .requestMatchers("/api/horario", "/api/horario/**").hasAnyRole("MEDICO", "SUPERADMIN")
-                        // Medicamentos y farmacia (HU05, HU06): pendiente
-                        // ==========================================================
+                // === Reglas por modulo. Cada HU agrega sus lineas aqui. ===
+                // Citas (HU01, HU02): SUPERADMIN puede todo
+                .requestMatchers("/api/agendas/**", "/api/citas", "/api/citas/**")
+                    .hasAnyRole("PACIENTE", "RECEPCIONISTA", "SUPERADMIN")
+                .requestMatchers("/api/pacientes").hasAnyRole("RECEPCIONISTA", "SUPERADMIN")
+                // Lista de medicos: la usan quienes reservan o consultan citas
+                .requestMatchers("/api/medicos").hasAnyRole("PACIENTE", "RECEPCIONISTA", "SUPERADMIN", "GERENTE")
+                // Agenda del medico (base de HU03)
+                .requestMatchers("/api/medico/**").hasRole("MEDICO")
+                // Administracion: consultas de solo lectura
+                .requestMatchers("/api/admin/citas").hasAnyRole("SUPERADMIN", "GERENTE")
+                .requestMatchers("/api/admin/auditoria").hasRole("SUPERADMIN")
+                // Historias clinicas (HU03, HU04): registrar consulta
+                .requestMatchers("/api/historias", "/api/historias/**").hasAnyRole("MEDICO", "SUPERADMIN")
+                // Horarios del medico (franjas de cita)
+                .requestMatchers("/api/horario", "/api/horario/**").hasAnyRole("MEDICO", "SUPERADMIN")
+                // Medicamentos y farmacia (HU05, HU06): pendiente
+                // ==========================================================
 
-                        // Todo lo demas: cualquier usuario con sesion
-                        .anyRequest().authenticated())
-                .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+                // Todo lo demas: cualquier usuario con sesion
+                .anyRequest().authenticated())
+            .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

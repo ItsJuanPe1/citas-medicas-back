@@ -12,10 +12,8 @@ import java.sql.SQLException;
 import java.util.Map;
 
 /**
- * Convierte los errores de negocio de PL/SQL (RAISE_APPLICATION_ERROR
- * -20000..-20999)
- * en respuestas HTTP con {"mensaje": "..."}. Los controllers NO atrapan estos
- * errores:
+ * Convierte los errores de negocio de PL/SQL (RAISE_APPLICATION_ERROR -20000..-20999)
+ * en respuestas HTTP con {"mensaje": "..."}. Los controllers NO atrapan estos errores:
  * los dejan subir hasta aqui.
  *
  * Para dar un estado HTTP especifico a un codigo nuevo, agregalo en ESTADOS.
@@ -26,45 +24,59 @@ public class OracleErrorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(OracleErrorHandler.class);
 
-    // Rangos por paquete: citas 20001-20099, historias 20100-20199, medicamentos
-    // 20200-20299, agendas 20300-20399, perfiles 20400-20499
+    // Rangos por paquete: citas 20001-20099, historias 20100-20199, medicamentos 20200-20299, agendas 20300-20399, perfiles 20400-20499
     private static final Map<Integer, HttpStatus> ESTADOS = Map.ofEntries(
             // PKG_GESTION_CITAS
-            Map.entry(20001, HttpStatus.CONFLICT), // medico/horario ocupado
-            Map.entry(20002, HttpStatus.NOT_FOUND), // horario no existe
-            Map.entry(20003, HttpStatus.NOT_FOUND), // paciente no existe
-            Map.entry(20004, HttpStatus.BAD_REQUEST), // horario pasado
-            Map.entry(20005, HttpStatus.CONFLICT), // paciente con cruce
-            Map.entry(20006, HttpStatus.NOT_FOUND), // cita no existe
-            Map.entry(20007, HttpStatus.CONFLICT), // cita no cancelable
-            Map.entry(20008, HttpStatus.FORBIDDEN), // cita ajena
-            Map.entry(20009, HttpStatus.BAD_REQUEST), // motivo de cancelacion obligatorio
+            Map.entry(20001, HttpStatus.CONFLICT),   // medico/horario ocupado
+            Map.entry(20002, HttpStatus.NOT_FOUND),  // horario no existe
+            Map.entry(20003, HttpStatus.NOT_FOUND),  // paciente no existe
+            Map.entry(20004, HttpStatus.BAD_REQUEST),// horario pasado
+            Map.entry(20005, HttpStatus.CONFLICT),   // paciente con cruce
+            Map.entry(20006, HttpStatus.NOT_FOUND),  // cita no existe
+            Map.entry(20007, HttpStatus.CONFLICT),   // cita no cancelable
+            Map.entry(20008, HttpStatus.FORBIDDEN),  // cita ajena
+            Map.entry(20009, HttpStatus.BAD_REQUEST),// motivo de cancelacion obligatorio
+            Map.entry(20010, HttpStatus.BAD_REQUEST),// duracion/hora de la cita invalida
+            Map.entry(20011, HttpStatus.BAD_REQUEST),// cita fuera del horario del medico
             // PKG_HISTORIAS_CLINICAS (20100+)
-            Map.entry(20101, HttpStatus.NOT_FOUND), // cita no existe
-            Map.entry(20102, HttpStatus.CONFLICT), // cita no esta PROGRAMADA
-            Map.entry(20103, HttpStatus.FORBIDDEN), // cita de otro medico
-            Map.entry(20104, HttpStatus.BAD_REQUEST), // diagnostico obligatorio
-            Map.entry(20105, HttpStatus.BAD_REQUEST), // texto muy largo
-            Map.entry(20106, HttpStatus.CONFLICT), // cita vencida (horario ya termino)
+            Map.entry(20101, HttpStatus.NOT_FOUND),  // cita no existe
+            Map.entry(20102, HttpStatus.CONFLICT),   // cita no esta PROGRAMADA
+            Map.entry(20103, HttpStatus.FORBIDDEN),  // cita de otro medico
+            Map.entry(20104, HttpStatus.BAD_REQUEST),// diagnostico obligatorio
+            Map.entry(20105, HttpStatus.BAD_REQUEST),// texto muy largo
+            Map.entry(20106, HttpStatus.CONFLICT),   // cita vencida (horario ya termino)
+            Map.entry(20107, HttpStatus.NOT_FOUND),  // trigger HU04: cita no existe
+            Map.entry(20108, HttpStatus.CONFLICT),   // trigger HU04: cita no PROGRAMADA
+            Map.entry(20109, HttpStatus.CONFLICT),   // la cita aun no inicia
             // PKG_AGENDAS (20300+)
-            Map.entry(20301, HttpStatus.BAD_REQUEST), // horario en el pasado
-            Map.entry(20302, HttpStatus.BAD_REQUEST), // rango invalido
-            Map.entry(20303, HttpStatus.BAD_REQUEST), // duracion invalida
-            Map.entry(20304, HttpStatus.BAD_REQUEST), // demasiadas franjas
-            Map.entry(20305, HttpStatus.NOT_FOUND), // medico no existe
-            Map.entry(20306, HttpStatus.CONFLICT), // bloqueado por otra persona
-            Map.entry(20307, HttpStatus.CONFLICT), // cruce con otros horarios
-            Map.entry(20308, HttpStatus.NOT_FOUND), // horario no existe
-            Map.entry(20309, HttpStatus.FORBIDDEN), // horario de otro medico
-            Map.entry(20310, HttpStatus.CONFLICT), // horario con cita
+            Map.entry(20301, HttpStatus.BAD_REQUEST),// horario en el pasado
+            Map.entry(20302, HttpStatus.BAD_REQUEST),// rango invalido
+            Map.entry(20303, HttpStatus.BAD_REQUEST),// duracion invalida
+            Map.entry(20304, HttpStatus.BAD_REQUEST),// demasiadas franjas
+            Map.entry(20305, HttpStatus.NOT_FOUND),  // medico no existe
+            Map.entry(20306, HttpStatus.CONFLICT),   // bloqueado por otra persona
+            Map.entry(20307, HttpStatus.CONFLICT),   // cruce con otros horarios
+            Map.entry(20308, HttpStatus.NOT_FOUND),  // horario no existe
+            Map.entry(20309, HttpStatus.FORBIDDEN),  // horario de otro medico
+            Map.entry(20310, HttpStatus.CONFLICT),   // horario con cita
             // PKG_PERFILES (20400+)
-            Map.entry(20401, HttpStatus.BAD_REQUEST), // sin perfil editable
-            Map.entry(20402, HttpStatus.BAD_REQUEST), // correo invalido
-            Map.entry(20403, HttpStatus.BAD_REQUEST), // telefono invalido
-            Map.entry(20404, HttpStatus.NOT_FOUND), // perfil no existe
-            Map.entry(20405, HttpStatus.CONFLICT) // correo en uso
-    // PKG_GESTION_MEDICAMENTOS (20200+): poner una coma al final de la linea de
-    // arriba y agregar aqui
+            Map.entry(20401, HttpStatus.BAD_REQUEST),// sin perfil editable
+            Map.entry(20402, HttpStatus.BAD_REQUEST),// correo invalido
+            Map.entry(20403, HttpStatus.BAD_REQUEST),// telefono invalido
+            Map.entry(20404, HttpStatus.NOT_FOUND),  // perfil no existe
+            Map.entry(20405, HttpStatus.CONFLICT),   // correo en uso
+            // PKG_GESTION_MEDICAMENTOS (20200+)
+            Map.entry(20201, HttpStatus.NOT_FOUND),  // historia no existe
+            Map.entry(20202, HttpStatus.FORBIDDEN),  // historia de otro medico
+            Map.entry(20203, HttpStatus.CONFLICT),   // la consulta ya tiene receta
+            Map.entry(20204, HttpStatus.BAD_REQUEST),// receta invalida
+            Map.entry(20205, HttpStatus.NOT_FOUND),  // medicamento no existe
+            Map.entry(20206, HttpStatus.NOT_FOUND),  // detalle no existe
+            Map.entry(20207, HttpStatus.CONFLICT),   // sin stock
+            Map.entry(20208, HttpStatus.CONFLICT),   // ya entregado
+            Map.entry(20209, HttpStatus.CONFLICT),   // bloqueado por otra persona
+            Map.entry(20210, HttpStatus.BAD_REQUEST) // cantidad invalida
+            // Siguiente paquete: poner una coma al final de la linea de arriba y agregar aqui (sin coma en la ultima)
     );
 
     @ExceptionHandler(DataAccessException.class)
@@ -82,10 +94,8 @@ public class OracleErrorHandler {
     }
 
     /**
-     * Recorre la cadena de causas y devuelve el primer SQLException con codigo
-     * ORA-20000..20999.
-     * (El driver de Oracle puede colgar otra excepcion como causa final, por eso no
-     * basta
+     * Recorre la cadena de causas y devuelve el primer SQLException con codigo ORA-20000..20999.
+     * (El driver de Oracle puede colgar otra excepcion como causa final, por eso no basta
      * con mirar la causa mas profunda.)
      */
     private static SQLException buscarErrorDeNegocio(Throwable e) {

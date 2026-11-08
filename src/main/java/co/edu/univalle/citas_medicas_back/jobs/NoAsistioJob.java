@@ -13,8 +13,7 @@ import java.sql.Types;
 
 /**
  * Cada minuto pasa a NO_ASISTIO las citas PROGRAMADA cuyo horario ya termino.
- * La logica vive en PKG_HISTORIAS_CLINICAS.MARCAR_NO_ASISTIDAS; esto solo la
- * dispara.
+ * La logica vive en PKG_HISTORIAS_CLINICAS.MARCAR_NO_ASISTIDAS; esto solo la dispara.
  */
 @Configuration
 @EnableScheduling
@@ -37,8 +36,7 @@ public class NoAsistioJob {
                     return cs.getLong(1);
                 }
             });
-            if (n != null && n > 0)
-                log.info("Citas marcadas como NO_ASISTIO: {}", n);
+            if (n != null && n > 0) log.info("Citas marcadas como NO_ASISTIO: {}", n);
         } catch (Exception e) {
             // Si falla (p. ej. paquete aun sin compilar) no debe tumbar el back
             log.warn("No se pudo marcar citas vencidas: {}", e.getMessage());

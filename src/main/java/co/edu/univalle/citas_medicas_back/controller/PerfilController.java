@@ -19,8 +19,7 @@ import java.util.Map;
 @RequestMapping("/api/perfil")
 public class PerfilController {
 
-    public record ContactoRequest(String telefono, String email) {
-    }
+    public record ContactoRequest(String telefono, String email) {}
 
     private final JdbcTemplate jdbc;
 
@@ -36,11 +35,10 @@ public class PerfilController {
         perfil.put("editable", false);
 
         String sql = switch (user.rol()) {
-            case "MEDICO" ->
-                """
-                        SELECT m.DOCUMENTO, m.NOMBRE, m.APELLIDO, m.TELEFONO, m.EMAIL, esp.VALOR AS ESPECIALIDAD, NULL AS NACIMIENTO
-                          FROM MEDICOS m JOIN PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
-                         WHERE m.ID_MEDICO = ?""";
+            case "MEDICO" -> """
+                    SELECT m.DOCUMENTO, m.NOMBRE, m.APELLIDO, m.TELEFONO, m.EMAIL, esp.VALOR AS ESPECIALIDAD, NULL AS NACIMIENTO
+                      FROM MEDICOS m JOIN PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
+                     WHERE m.ID_MEDICO = ?""";
             case "PACIENTE" -> """
                     SELECT DOCUMENTO, NOMBRE, APELLIDO, TELEFONO, EMAIL, NULL AS ESPECIALIDAD,
                            TO_CHAR(FECHA_NACIMIENTO, 'YYYY-MM-DD') AS NACIMIENTO
@@ -50,8 +48,7 @@ public class PerfilController {
                       FROM FARMACEUTICOS WHERE ID_FARMACEUTICO = ?""";
             default -> null;
         };
-        if (sql == null || user.idEntidad() == null)
-            return perfil;
+        if (sql == null || user.idEntidad() == null) return perfil;
 
         List<Map<String, Object>> filas = jdbc.query(sql, (rs, i) -> {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -76,10 +73,7 @@ public class PerfilController {
         jdbc.execute((ConnectionCallback<Void>) con -> {
             try (CallableStatement cs = con.prepareCall("{call PKG_PERFILES.ACTUALIZAR_CONTACTO(?,?,?,?,?)}")) {
                 cs.setString(1, user.rol());
-                if (user.idEntidad() == null)
-                    cs.setNull(2, Types.NUMERIC);
-                else
-                    cs.setLong(2, user.idEntidad());
+                if (user.idEntidad() == null) cs.setNull(2, Types.NUMERIC); else cs.setLong(2, user.idEntidad());
                 cs.setString(3, req.telefono());
                 cs.setString(4, req.email());
                 cs.setLong(5, user.idUsuario());
