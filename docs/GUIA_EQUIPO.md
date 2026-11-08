@@ -9,12 +9,12 @@ Sistema de citas médicas (Oracle + PL/SQL, Spring Boot, React). Esta guía expl
 | Listo | Detalle |
 |---|---|
 | Login con roles | Token JWT (8 horas). La contraseña se guarda con SHA-256. |
-| HU01 Reservar cita | `PKG_GESTION_CITAS.RESERVAR_CITA`: bloqueo `FOR UPDATE`, sin cruces de horario. |
-| HU02 Cancelar cita | `PKG_GESTION_CITAS.CANCELAR_CITA`: motivo obligatorio, libera el horario. |
+| HU01 Reservar cita | `PKG_GESTION_CITAS.RESERVAR_CITA`: bloqueo `FOR UPDATE` sobre la agenda; la cita tiene su propia hora (inicio y fin) dentro del rango de la agenda; sin cruces del médico ni del paciente. |
+| HU02 Cancelar cita | `PKG_GESTION_CITAS.CANCELAR_CITA`: motivo obligatorio; la cita queda CANCELADA y su agenda vuelve a DISPONIBLE (mismo registro). |
 | Auditoría | Las reservas y cancelaciones quedan en `LOG_AUDITORIAS`. |
 | Pantallas | Reservar cita, Citas, Médicos, Todas las citas, Auditoría, Mi agenda (médico). |
 
-**Hecho:** HU01, HU02 y HU03, más horarios del médico (`PKG_AGENDAS`), perfil (`PKG_PERFILES`) y estado NO_ASISTIO (job cada minuto). **Pendiente (reparto en la sección 8):** HU04 a HU10.
+**Hecho:** HU01 a HU05, más horarios del médico (`PKG_AGENDAS`), perfil (`PKG_PERFILES`) y estado NO_ASISTIO (job cada minuto). **Pendiente (reparto en la sección 8):** HU06 a HU10.
 
 ## 2. Reglas que no se rompen
 
@@ -80,15 +80,19 @@ Más usuarios: `SELECT USERNAME, ID_ROL, ID_ENTIDAD FROM USUARIOS;`
 | `GET /api/health` | público | Verificar que el back responde |
 | `GET /api/medicos` | paciente, recepción, superadmin, gerente | Lista de médicos |
 | `GET /api/agendas/disponibles?idMedico=` | paciente, recepción, superadmin | Horarios libres |
-| `POST /api/citas` | paciente, recepción, superadmin | HU01: reservar |
+| `POST /api/citas` (body `{idAgenda, inicio, fin, idPaciente?}`) | paciente, recepción, superadmin | HU01: reservar un tramo dentro de una agenda |
 | `GET /api/citas?idPaciente=` | paciente, recepción, superadmin | Citas de un paciente |
 | `PUT /api/citas/{id}/cancelar` (body `{motivo}`) | paciente, recepción, superadmin | HU02: cancelar |
 | `GET /api/pacientes?q=` | recepción, superadmin | Buscar paciente |
 | `GET /api/admin/citas` | superadmin, gerente | Todas las citas con filtros |
 | `GET /api/admin/auditoria` | superadmin | Últimos 100 movimientos |
 | `POST /api/historias` | médico, superadmin | HU03: registra la consulta (diagnóstico + notas) y deja la cita ATENDIDA |
-| `GET/POST/DELETE /api/horario` | médico, superadmin | Franjas de cita del médico (`PKG_AGENDAS`) |
+| `GET/POST/DELETE /api/horario` | médico, superadmin | Agendas (rangos de horas) del médico (`PKG_AGENDAS`) |
 | `GET/PUT /api/perfil` | cualquier usuario | Ver perfil y editar teléfono/correo (`PKG_PERFILES`) |
+| `GET /api/medicamentos` | médico, farmacéutico, superadmin | Catálogo con stock |
+| `POST /api/recetas` | médico, superadmin | HU05: prescribe la receta de una historia |
+| `GET /api/farmacia/pendientes` | farmacéutico, superadmin | HU05: medicamentos por entregar |
+| `POST /api/farmacia/entregas/{idDetalle}` | farmacéutico, superadmin | HU05: entrega y descuenta stock (parcial si falta) |
 | `GET /api/medico/citas?historial=` | médico | Agenda del médico, incluye diagnóstico y notas de citas atendidas |
 
 ## 6. Receta para agregar una HU
@@ -146,12 +150,12 @@ Más usuarios: `SELECT USERNAME, ID_ROL, ID_ENTIDAD FROM USUARIOS;`
 
 | Quién | HU | Notas |
 |---|---|---|
-| Persona 1 | HU04 | Trigger BEFORE INSERT sobre `HISTORIA_CLINICA` (verifica que la cita esté PROGRAMADA). HU03 ya está hecha en `PKG_HISTORIAS_CLINICAS.REGISTRAR_CONSULTA`; el trigger debe convivir con ese procedimiento. |
-| Persona 2 | HU05 + HU06 | `PKG_GESTION_MEDICAMENTOS` + trigger de stock. Reemplaza la pantalla provisional `Inicio.jsx` del farmacéutico. |
+| Persona 1 | Apoyo | HU03 y HU04 ya están hechas (`REGISTRAR_CONSULTA` y `TRG_HISTORIA_CITA_PROGRAMADA`). Puede tomar la mitad de HU07/HU08 con la Persona 3, o probar y revisar lo ya entregado. |
+| Persona 2 | HU06 | Trigger AFTER UPDATE sobre `STOCK_FARMACIA` que registra la alerta cuando `CANTIDAD_DISPONIBLE < CANTIDAD_MINIMA`. HU05 ya está hecha (`PKG_GESTION_MEDICAMENTOS`, `TRG_DETALLE_ESTADO_RECETA`, pantalla Farmacia). Nota: `LOG_AUDITORIAS` pide `ID_USUARIO` NOT NULL; usar 0 para acciones del sistema. |
 | Persona 3 | HU07 + HU08 | VPD/RLS y trigger de auditoría sobre `HISTORIA_CLINICA`. El trigger se puede empezar ya. |
 | Persona 4 | HU09 + HU10 | Cancelación masiva (BULK COLLECT/FORALL) en `PKG_GESTION_CITAS`, y reporte para el gerente. |
 
-HU05 ya puede apoyarse en la historia clínica creada por HU03 (`ID_HISTORIA`).
+Al entregar un medicamento (HU05) el stock baja con un `UPDATE` sobre `STOCK_FARMACIA`: ahí se dispara el trigger de HU06.
 
 ## 9. Git
 
@@ -180,3 +184,7 @@ HU05 ya puede apoyarse en la historia clínica creada por HU03 (`ID_HISTORIA`).
 | 403 donde debería haber un 500 | Spring Security oculta errores en `/error`; mirar el log del back |
 | Paquete inválido o `PLS-` al compilar | Revisar el `SHOW ERRORS` que sale al final del script |
 | `/api/medicos` responde 403 | Ese usuario (médico o farmacéutico) no tiene permiso; es intencional |
+
+
+## Modelo cita-agenda (1 a N)
+Por indicación del profesor, una agenda es un rango de horas del médico y puede tener varias citas; cada cita guarda su `FECHA_HORA_INICIO` y `FECHA_HORA_FIN`. HU09 (cancelación masiva) debe leer la hora de la cita en `CITAS_MEDICAS`, no en la agenda. 
