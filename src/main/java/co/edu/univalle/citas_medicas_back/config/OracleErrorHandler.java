@@ -24,7 +24,7 @@ public class OracleErrorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(OracleErrorHandler.class);
 
-    // Rangos por paquete: citas 20001-20099, historias 20100-20199, medicamentos 20200-20299, agendas 20300-20399, perfiles 20400-20499
+    // Rangos por paquete: citas 20001-20099, historias 20100-20199, medicamentos 20200-20299, agendas 20300-20399, perfiles 20400-20499, usuarios 20500-20599
     private static final Map<Integer, HttpStatus> ESTADOS = Map.ofEntries(
             // PKG_GESTION_CITAS
             Map.entry(20001, HttpStatus.CONFLICT),   // medico/horario ocupado
@@ -75,7 +75,20 @@ public class OracleErrorHandler {
             Map.entry(20207, HttpStatus.CONFLICT),   // sin stock
             Map.entry(20208, HttpStatus.CONFLICT),   // ya entregado
             Map.entry(20209, HttpStatus.CONFLICT),   // bloqueado por otra persona
-            Map.entry(20210, HttpStatus.BAD_REQUEST) // cantidad invalida
+            Map.entry(20210, HttpStatus.BAD_REQUEST),// cantidad invalida
+            // PKG_USUARIOS (20500+)
+            Map.entry(20501, HttpStatus.CONFLICT),   // usuario ya en uso
+            Map.entry(20502, HttpStatus.CONFLICT),   // documento ya registrado
+            Map.entry(20503, HttpStatus.CONFLICT),   // correo ya registrado
+            Map.entry(20504, HttpStatus.BAD_REQUEST),// datos invalidos
+            Map.entry(20505, HttpStatus.BAD_REQUEST),// contrasena debil
+            Map.entry(20506, HttpStatus.BAD_REQUEST),// rol invalido
+            Map.entry(20507, HttpStatus.BAD_REQUEST),// especialidad invalida
+            Map.entry(20508, HttpStatus.NOT_FOUND),  // usuario no existe
+            Map.entry(20509, HttpStatus.BAD_REQUEST),// estado invalido / auto-desactivacion
+            Map.entry(20510, HttpStatus.CONFLICT),   // bloqueado por otra persona
+            Map.entry(20511, HttpStatus.BAD_REQUEST),// clave actual incorrecta (400, no 401: el front no cierra sesion)
+            Map.entry(20512, HttpStatus.BAD_REQUEST) // nueva clave igual a la actual
             // Siguiente paquete: poner una coma al final de la linea de arriba y agregar aqui (sin coma en la ultima)
     );
 
