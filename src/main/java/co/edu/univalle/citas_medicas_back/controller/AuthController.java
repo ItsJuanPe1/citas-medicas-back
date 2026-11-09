@@ -19,7 +19,7 @@ public class AuthController {
     public record LoginRequest(String username, String password) {
     }
 
-    public record LoginResponse(String token, String username, String rol, Long idEntidad) {
+    public record LoginResponse(String token, String username, String rol, Long idEntidad, boolean debeCambiarClave) {
     }
 
     private final JdbcTemplate jdbc;
@@ -37,7 +37,7 @@ public class AuthController {
         }
 
         List<Map<String, Object>> rows = jdbc.queryForList("""
-                SELECT u.ID_USUARIO, u.USERNAME, u.PASSWORD, u.ID_ENTIDAD, u.ESTADO, r.NOMBRE AS ROL
+                SELECT u.ID_USUARIO, u.USERNAME, u.PASSWORD, u.ID_ENTIDAD, u.ESTADO, u.DEBE_CAMBIAR_CLAVE, r.NOMBRE AS ROL
                 FROM USUARIOS u JOIN ROLES r ON r.ID_ROL = u.ID_ROL
                 WHERE u.USERNAME = ?
                 """, req.username());
@@ -61,9 +61,10 @@ public class AuthController {
         Long idEntidad = u.get("ID_ENTIDAD") == null ? null : ((Number) u.get("ID_ENTIDAD")).longValue();
         String rol = (String) u.get("ROL");
         String username = (String) u.get("USERNAME");
+        boolean debeCambiar = "S".equals(u.get("DEBE_CAMBIAR_CLAVE"));
 
         String token = jwt.generar(idUsuario, username, rol, idEntidad);
-        return ResponseEntity.ok(new LoginResponse(token, username, rol, idEntidad));
+        return ResponseEntity.ok(new LoginResponse(token, username, rol, idEntidad, debeCambiar));
     }
 
     private static ResponseEntity<Map<String, String>> error(HttpStatus status, String msg) {
