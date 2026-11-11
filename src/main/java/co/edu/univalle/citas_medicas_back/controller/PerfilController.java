@@ -37,15 +37,15 @@ public class PerfilController {
         String sql = switch (user.rol()) {
             case "MEDICO" -> """
                     SELECT m.DOCUMENTO, m.NOMBRE, m.APELLIDO, m.TELEFONO, m.EMAIL, esp.VALOR AS ESPECIALIDAD, NULL AS NACIMIENTO
-                      FROM MEDICOS m JOIN PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
+                      FROM TBL_MEDICOS m JOIN TBL_PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
                      WHERE m.ID_MEDICO = ?""";
             case "PACIENTE" -> """
                     SELECT DOCUMENTO, NOMBRE, APELLIDO, TELEFONO, EMAIL, NULL AS ESPECIALIDAD,
                            TO_CHAR(FECHA_NACIMIENTO, 'YYYY-MM-DD') AS NACIMIENTO
-                      FROM PACIENTES WHERE ID_PACIENTE = ?""";
+                      FROM TBL_PACIENTES WHERE ID_PACIENTE = ?""";
             case "FARMACEUTICO" -> """
                     SELECT DOCUMENTO, NOMBRE, APELLIDO, TELEFONO, EMAIL, NULL AS ESPECIALIDAD, NULL AS NACIMIENTO
-                      FROM FARMACEUTICOS WHERE ID_FARMACEUTICO = ?""";
+                      FROM TBL_FARMACEUTICOS WHERE ID_FARMACEUTICO = ?""";
             default -> null;
         };
         if (sql == null || user.idEntidad() == null) return perfil;
@@ -71,7 +71,7 @@ public class PerfilController {
     @PutMapping
     public ResponseEntity<?> actualizar(@RequestBody ContactoRequest req, @AuthenticationPrincipal AuthUser user) {
         jdbc.execute((ConnectionCallback<Void>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_PERFILES.ACTUALIZAR_CONTACTO(?,?,?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_PERFILES.PRO_ACTUALIZAR_CONTACTO(?,?,?,?,?)}")) {
                 cs.setString(1, user.rol());
                 if (user.idEntidad() == null) cs.setNull(2, Types.NUMERIC); else cs.setLong(2, user.idEntidad());
                 cs.setString(3, req.telefono());

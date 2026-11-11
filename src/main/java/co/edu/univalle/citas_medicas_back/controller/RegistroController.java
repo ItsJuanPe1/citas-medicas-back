@@ -32,7 +32,7 @@ public class RegistroController {
     @PostMapping("/registro")
     public ResponseEntity<?> registrar(@RequestBody RegistroRequest r) {
         Long id = jdbc.execute((ConnectionCallback<Long>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_USUARIOS.REGISTRAR_PACIENTE(?,?,?,?,?,?,?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_USUARIOS.PRO_REGISTRAR_PACIENTE(?,?,?,?,?,?,?,?,?)}")) {
                 cs.setString(1, r.documento());
                 cs.setString(2, r.nombre());
                 cs.setString(3, r.apellido());

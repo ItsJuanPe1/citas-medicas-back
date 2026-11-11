@@ -29,7 +29,7 @@ public class SecurityConfig {
             .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
             .authorizeHttpRequests(auth -> auth
                 // Publico
-                .requestMatchers("/api/health", "/api/auth/login", "/error").permitAll()
+                .requestMatchers("/api/health", "/api/auth/login", "/api/auth/registro", "/error").permitAll()
 
                 // === Reglas por modulo. Cada HU agrega sus lineas aqui. ===
                 // Citas (HU01, HU02): SUPERADMIN puede todo
@@ -43,6 +43,8 @@ public class SecurityConfig {
                 // Administracion: consultas de solo lectura
                 .requestMatchers("/api/admin/citas").hasAnyRole("SUPERADMIN", "GERENTE")
                 .requestMatchers("/api/admin/auditoria").hasRole("SUPERADMIN")
+                // Gestion de usuarios (alta de personal, estado, clave)
+                .requestMatchers("/api/admin/usuarios", "/api/admin/usuarios/**", "/api/admin/especialidades").hasRole("SUPERADMIN")
                 // Historias clinicas (HU03, HU04): registrar consulta
                 .requestMatchers("/api/historias", "/api/historias/**").hasAnyRole("MEDICO", "SUPERADMIN")
                 // Horarios del medico (franjas de cita)

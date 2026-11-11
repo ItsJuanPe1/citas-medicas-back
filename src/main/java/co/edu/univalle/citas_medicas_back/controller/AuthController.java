@@ -38,7 +38,7 @@ public class AuthController {
 
         List<Map<String, Object>> rows = jdbc.queryForList("""
                 SELECT u.ID_USUARIO, u.USERNAME, u.PASSWORD, u.ID_ENTIDAD, u.ESTADO, u.DEBE_CAMBIAR_CLAVE, r.NOMBRE AS ROL
-                FROM USUARIOS u JOIN ROLES r ON r.ID_ROL = u.ID_ROL
+                FROM TBL_USUARIOS u JOIN TBL_ROLES r ON r.ID_ROL = u.ID_ROL
                 WHERE u.USERNAME = ?
                 """, req.username());
 

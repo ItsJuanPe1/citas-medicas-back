@@ -47,15 +47,15 @@ public class AdminController {
                 SELECT c.ID_CITA, p.NOMBRE || ' ' || p.APELLIDO AS PACIENTE, p.DOCUMENTO,
                        m.NOMBRE || ' ' || m.APELLIDO AS MEDICO, esp.VALOR AS ESPECIALIDAD,
                        c.FECHA_HORA_INICIO, est.VALOR AS ESTADO, (SELECT REGEXP_SUBSTR(l.VALOR_DESPUES, 'motivo=(.*)$', 1, 1, 'n', 1)
-                          FROM LOG_AUDITORIAS l
-                         WHERE l.TABLA_AFECTADA = 'CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
+                          FROM TBL_LOG_AUDITORIAS l
+                         WHERE l.TABLA_AFECTADA = 'TBL_CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
                            AND l.ID_REGISTRO = c.ID_CITA AND ROWNUM = 1) AS MOTIVO_CANCELACION
-                  FROM CITAS_MEDICAS c
-                  JOIN PACIENTES p           ON p.ID_PACIENTE = c.ID_PACIENTE
-                  JOIN AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
-                  JOIN MEDICOS m             ON m.ID_MEDICO = a.ID_MEDICO
-                  JOIN PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
-                  JOIN PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = c.ID_ESTADO
+                  FROM TBL_CITAS_MEDICAS c
+                  JOIN TBL_PACIENTES p           ON p.ID_PACIENTE = c.ID_PACIENTE
+                  JOIN TBL_AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
+                  JOIN TBL_MEDICOS m             ON m.ID_MEDICO = a.ID_MEDICO
+                  JOIN TBL_PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
+                  JOIN TBL_PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = c.ID_ESTADO
                  WHERE 1 = 1
                 """);
         List<Object> args = new ArrayList<>();
@@ -83,8 +83,8 @@ public class AdminController {
         List<LogDto> crudos = jdbc.query("""
                 SELECT l.ID_LOG, u.USERNAME, l.ACCION, l.TABLA_AFECTADA, l.ID_REGISTRO,
                        l.VALOR_ANTES, l.VALOR_DESPUES, l.FECHA_HORA
-                  FROM LOG_AUDITORIAS l
-                  LEFT JOIN USUARIOS u ON u.ID_USUARIO = l.ID_USUARIO
+                  FROM TBL_LOG_AUDITORIAS l
+                  LEFT JOIN TBL_USUARIOS u ON u.ID_USUARIO = l.ID_USUARIO
                  ORDER BY l.FECHA_HORA DESC, l.ID_LOG DESC
                  FETCH FIRST 100 ROWS ONLY
                 """,
@@ -134,7 +134,7 @@ public class AdminController {
         String marcas = ids.stream().map(x -> "?").collect(Collectors.joining(","));
         jdbc.query("""
                 SELECT a.ID_AGENDA, a.FECHA_HORA_INICIO, m.NOMBRE || ' ' || m.APELLIDO AS MEDICO
-                  FROM AGENDAS_MEDICOS a JOIN MEDICOS m ON m.ID_MEDICO = a.ID_MEDICO
+                  FROM TBL_AGENDAS_MEDICOS a JOIN TBL_MEDICOS m ON m.ID_MEDICO = a.ID_MEDICO
                  WHERE a.ID_AGENDA IN (""" + marcas + ")",
                 rs -> {
                     res.put(rs.getLong(1), rs.getString(3) + ", "
@@ -147,7 +147,7 @@ public class AdminController {
         Map<Long, String> res = new HashMap<>();
         if (ids.isEmpty()) return res;
         String marcas = ids.stream().map(x -> "?").collect(Collectors.joining(","));
-        jdbc.query("SELECT ID_PACIENTE, NOMBRE || ' ' || APELLIDO FROM PACIENTES WHERE ID_PACIENTE IN (" + marcas + ")",
+        jdbc.query("SELECT ID_PACIENTE, NOMBRE || ' ' || APELLIDO FROM TBL_PACIENTES WHERE ID_PACIENTE IN (" + marcas + ")",
                 rs -> {
                     res.put(rs.getLong(1), rs.getString(2));
                 }, ids.toArray());

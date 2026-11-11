@@ -24,8 +24,8 @@ public class MedicoController {
     public List<MedicoDto> listar() {
         String sql = """
                 SELECT m.ID_MEDICO, m.NOMBRE, m.APELLIDO, pt.VALOR AS ESPECIALIDAD
-                FROM MEDICOS m
-                JOIN PARAMETRICA_TIPOS pt ON pt.ID_PARAMETRO = m.ID_ESPECIALIDAD
+                FROM TBL_MEDICOS m
+                JOIN TBL_PARAMETRICA_TIPOS pt ON pt.ID_PARAMETRO = m.ID_ESPECIALIDAD
                 ORDER BY m.APELLIDO
                 """;
         return jdbc.query(sql, (rs, i) -> new MedicoDto(
