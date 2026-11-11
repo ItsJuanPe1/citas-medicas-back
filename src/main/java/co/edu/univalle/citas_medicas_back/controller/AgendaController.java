@@ -43,10 +43,10 @@ public class AgendaController {
         StringBuilder sql = new StringBuilder("""
                 SELECT a.ID_AGENDA, a.ID_MEDICO, m.NOMBRE, m.APELLIDO, esp.VALOR AS ESPECIALIDAD,
                        a.FECHA_HORA_INICIO, a.FECHA_HORA_FIN
-                  FROM AGENDAS_MEDICOS a
-                  JOIN MEDICOS m          ON m.ID_MEDICO = a.ID_MEDICO
-                  JOIN PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
-                  JOIN PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = a.ID_ESTADO
+                  FROM TBL_AGENDAS_MEDICOS a
+                  JOIN TBL_MEDICOS m          ON m.ID_MEDICO = a.ID_MEDICO
+                  JOIN TBL_PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
+                  JOIN TBL_PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = a.ID_ESTADO
                  WHERE est.NOMBRE = 'ESTADO_AGENDA' AND est.VALOR = 'DISPONIBLE'
                    AND a.FECHA_HORA_FIN > LOCALTIMESTAMP
                    AND a.FECHA_HORA_FIN > ?
@@ -73,8 +73,8 @@ public class AgendaController {
         Map<Long, List<Tramo>> ocupados = new HashMap<>();
         jdbc.query("""
                 SELECT c.ID_AGENDA, c.FECHA_HORA_INICIO, c.FECHA_HORA_FIN
-                  FROM CITAS_MEDICAS c
-                  JOIN PARAMETRICA_TIPOS e ON e.ID_PARAMETRO = c.ID_ESTADO
+                  FROM TBL_CITAS_MEDICAS c
+                  JOIN TBL_PARAMETRICA_TIPOS e ON e.ID_PARAMETRO = c.ID_ESTADO
                  WHERE e.VALOR <> 'CANCELADA' AND c.ID_AGENDA IN (""" + marcas + ") ORDER BY c.FECHA_HORA_INICIO",
                 rs -> {
                     ocupados.computeIfAbsent(rs.getLong(1), k -> new ArrayList<>())

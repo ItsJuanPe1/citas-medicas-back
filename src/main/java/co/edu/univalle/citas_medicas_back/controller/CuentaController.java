@@ -25,7 +25,7 @@ public class CuentaController {
 
     @GetMapping
     public Map<String, Boolean> estado(@AuthenticationPrincipal AuthUser user) {
-        String flag = jdbc.queryForObject("SELECT DEBE_CAMBIAR_CLAVE FROM USUARIOS WHERE ID_USUARIO = ?",
+        String flag = jdbc.queryForObject("SELECT DEBE_CAMBIAR_CLAVE FROM TBL_USUARIOS WHERE ID_USUARIO = ?",
                 String.class, user.idUsuario());
         return Map.of("debeCambiarClave", "S".equals(flag));
     }
@@ -33,7 +33,7 @@ public class CuentaController {
     @PutMapping("/clave")
     public ResponseEntity<?> cambiarClave(@RequestBody CambioClaveRequest req, @AuthenticationPrincipal AuthUser user) {
         jdbc.execute((ConnectionCallback<Void>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_USUARIOS.CAMBIAR_CLAVE(?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_USUARIOS.PRO_CAMBIAR_CLAVE(?,?,?)}")) {
                 cs.setLong(1, user.idUsuario());
                 cs.setString(2, req.actual());
                 cs.setString(3, req.nueva());

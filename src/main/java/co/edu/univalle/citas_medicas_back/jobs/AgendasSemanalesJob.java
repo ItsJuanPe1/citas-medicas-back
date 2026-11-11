@@ -12,7 +12,7 @@ import java.sql.Types;
 
 /**
  * Cada hora extiende el horario semanal de cada medico para que nunca se acabe
- * (siempre quedan ~52 semanas de agendas por delante). La logica vive en PKG_AGENDAS.GENERAR_AGENDAS_SEMANALES.
+ * (siempre quedan ~52 semanas de agendas por delante). La logica vive en PKG_AGENDAS.PRO_GENERAR_AGENDAS_SEMANALES.
  * (@EnableScheduling ya lo activa NoAsistioJob.)
  */
 @Component
@@ -29,7 +29,7 @@ public class AgendasSemanalesJob {
     public void generar() {
         try {
             Long n = jdbc.execute((ConnectionCallback<Long>) con -> {
-                try (CallableStatement cs = con.prepareCall("{call PKG_AGENDAS.GENERAR_AGENDAS_SEMANALES(?,?,?)}")) {
+                try (CallableStatement cs = con.prepareCall("{call PKG_AGENDAS.PRO_GENERAR_AGENDAS_SEMANALES(?,?,?)}")) {
                     cs.setNull(1, Types.NUMERIC);
                     cs.setInt(2, 52);
                     cs.registerOutParameter(3, Types.NUMERIC);

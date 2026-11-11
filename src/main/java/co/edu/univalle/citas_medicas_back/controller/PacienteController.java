@@ -27,10 +27,10 @@ public class PacienteController {
         String patron = "%" + q.trim().toLowerCase() + "%";
         return jdbc.query("""
                 SELECT ID_PACIENTE, DOCUMENTO, NOMBRE, APELLIDO
-                  FROM PACIENTES
-                 WHERE LOWER(DOCUMENTO || ' ' || NOMBRE || ' ' || APELLIDO) LIKE ?
-                 ORDER BY APELLIDO, NOMBRE
-                 FETCH FIRST 20 ROWS ONLY
+                FROM TBL_PACIENTES
+                WHERE LOWER(DOCUMENTO || ' ' || NOMBRE || ' ' || APELLIDO) LIKE ?
+                ORDER BY APELLIDO, NOMBRE
+                FETCH FIRST 20 ROWS ONLY
                 """,
                 (rs, i) -> new PacienteDto(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4)),
                 patron);

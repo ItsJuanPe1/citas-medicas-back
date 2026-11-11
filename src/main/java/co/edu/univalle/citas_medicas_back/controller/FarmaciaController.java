@@ -38,13 +38,13 @@ public class FarmaciaController {
                 SELECT d.ID_DETALLE, p.NOMBRE || ' ' || p.APELLIDO AS PACIENTE, p.DOCUMENTO,
                        m.NOMBRE AS MEDICAMENTO, m.PRESENTACION, d.DOSIS, d.CANTIDAD, d.CANTIDAD_PENDIENTE,
                        NVL(s.CANTIDAD_DISPONIBLE, 0) AS STOCK, r.FECHA_EMISION
-                  FROM DETALLE_RECETA d
-                  JOIN RECETAS_MEDICAS r ON r.ID_RECETA = d.ID_RECETA
-                  JOIN HISTORIA_CLINICA h ON h.ID_HISTORIA = r.ID_HISTORIA
-                  JOIN CITAS_MEDICAS c    ON c.ID_CITA = h.ID_CITA
-                  JOIN PACIENTES p        ON p.ID_PACIENTE = c.ID_PACIENTE
-                  JOIN MEDICAMENTOS m     ON m.ID_MEDICAMENTO = d.ID_MEDICAMENTO
-                  LEFT JOIN STOCK_FARMACIA s ON s.ID_MEDICAMENTO = d.ID_MEDICAMENTO
+                  FROM TBL_DETALLE_RECETA d
+                  JOIN TBL_RECETAS_MEDICAS r ON r.ID_RECETA = d.ID_RECETA
+                  JOIN TBL_HISTORIA_CLINICA h ON h.ID_HISTORIA = r.ID_HISTORIA
+                  JOIN TBL_CITAS_MEDICAS c    ON c.ID_CITA = h.ID_CITA
+                  JOIN TBL_PACIENTES p        ON p.ID_PACIENTE = c.ID_PACIENTE
+                  JOIN TBL_MEDICAMENTOS m     ON m.ID_MEDICAMENTO = d.ID_MEDICAMENTO
+                  LEFT JOIN TBL_STOCK_FARMACIA s ON s.ID_MEDICAMENTO = d.ID_MEDICAMENTO
                  WHERE d.CANTIDAD_PENDIENTE > 0
                 """);
         List<Object> args = new ArrayList<>();
@@ -71,7 +71,7 @@ public class FarmaciaController {
         Long idFarmaceutico = "FARMACEUTICO".equals(user.rol()) ? user.idEntidad() : null;
 
         Map<String, Long> r = jdbc.execute((ConnectionCallback<Map<String, Long>>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_GESTION_MEDICAMENTOS.ENTREGAR_MEDICAMENTO(?,?,?,?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_GESTION_MEDICAMENTOS.PRO_ENTREGAR_MEDICAMENTO(?,?,?,?,?,?)}")) {
                 cs.setLong(1, idDetalle);
                 cs.setLong(2, user.idUsuario());
                 if (idFarmaceutico == null) cs.setNull(3, Types.NUMERIC); else cs.setLong(3, idFarmaceutico);

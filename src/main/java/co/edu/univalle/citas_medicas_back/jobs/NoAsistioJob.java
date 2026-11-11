@@ -13,7 +13,7 @@ import java.sql.Types;
 
 /**
  * Cada minuto pasa a NO_ASISTIO las citas PROGRAMADA cuyo horario ya termino.
- * La logica vive en PKG_HISTORIAS_CLINICAS.MARCAR_NO_ASISTIDAS; esto solo la dispara.
+ * La logica vive en PKG_HISTORIAS_CLINICAS.PRO_MARCAR_NO_ASISTIDAS; esto solo la dispara.
  */
 @Configuration
 @EnableScheduling
@@ -30,7 +30,7 @@ public class NoAsistioJob {
     public void marcarVencidas() {
         try {
             Long n = jdbc.execute((ConnectionCallback<Long>) con -> {
-                try (CallableStatement cs = con.prepareCall("{call PKG_HISTORIAS_CLINICAS.MARCAR_NO_ASISTIDAS(?)}")) {
+                try (CallableStatement cs = con.prepareCall("{call PKG_HISTORIAS_CLINICAS.PRO_MARCAR_NO_ASISTIDAS(?)}")) {
                     cs.registerOutParameter(1, Types.NUMERIC);
                     cs.execute();
                     return cs.getLong(1);

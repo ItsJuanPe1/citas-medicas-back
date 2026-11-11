@@ -46,7 +46,7 @@ public class CitaController {
         if (idPaciente == null) return error(HttpStatus.BAD_REQUEST, "Falta el paciente");
 
         Long idCita = jdbc.execute((ConnectionCallback<Long>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_GESTION_CITAS.RESERVAR_CITA(?,?,?,?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_GESTION_CITAS.PRO_RESERVAR_CITA(?,?,?,?,?,?)}")) {
                 cs.setLong(1, idPaciente);
                 cs.setLong(2, req.idAgenda());
                 cs.setTimestamp(3, Timestamp.valueOf(req.inicio()));
@@ -70,14 +70,14 @@ public class CitaController {
         List<CitaDto> citas = jdbc.query("""
                 SELECT c.ID_CITA, m.NOMBRE, m.APELLIDO, esp.VALOR AS ESPECIALIDAD,
                        c.FECHA_HORA_INICIO, est.VALOR AS ESTADO, (SELECT REGEXP_SUBSTR(l.VALOR_DESPUES, 'motivo=(.*)$', 1, 1, 'n', 1)
-                          FROM LOG_AUDITORIAS l
-                         WHERE l.TABLA_AFECTADA = 'CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
+                          FROM TBL_LOG_AUDITORIAS l
+                         WHERE l.TABLA_AFECTADA = 'TBL_CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
                            AND l.ID_REGISTRO = c.ID_CITA AND ROWNUM = 1) AS MOTIVO_CANCELACION
-                  FROM CITAS_MEDICAS c
-                  JOIN AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
-                  JOIN MEDICOS m             ON m.ID_MEDICO = a.ID_MEDICO
-                  JOIN PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
-                  JOIN PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = c.ID_ESTADO
+                  FROM TBL_CITAS_MEDICAS c
+                  JOIN TBL_AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
+                  JOIN TBL_MEDICOS m             ON m.ID_MEDICO = a.ID_MEDICO
+                  JOIN TBL_PARAMETRICA_TIPOS esp ON esp.ID_PARAMETRO = m.ID_ESPECIALIDAD
+                  JOIN TBL_PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = c.ID_ESTADO
                  WHERE c.ID_PACIENTE = ?
                  ORDER BY c.FECHA_HORA_INICIO DESC
                  FETCH FIRST 100 ROWS ONLY
@@ -97,7 +97,7 @@ public class CitaController {
         Long idPaciente = "PACIENTE".equals(user.rol()) ? user.idEntidad() : null;
 
         jdbc.execute((ConnectionCallback<Void>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_GESTION_CITAS.CANCELAR_CITA(?,?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_GESTION_CITAS.PRO_CANCELAR_CITA(?,?,?,?)}")) {
                 cs.setLong(1, id);
                 cs.setLong(2, user.idUsuario());
                 cs.setString(3, req == null ? null : req.motivo());

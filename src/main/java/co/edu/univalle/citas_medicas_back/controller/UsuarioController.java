@@ -38,11 +38,11 @@ public class UsuarioController {
                 SELECT * FROM (
                   SELECT u.ID_USUARIO, u.USERNAME, r.NOMBRE AS ROL, u.ESTADO,
                          CASE r.NOMBRE
-                           WHEN 'MEDICO'       THEN (SELECT m.NOMBRE || ' ' || m.APELLIDO FROM MEDICOS m WHERE m.ID_MEDICO = u.ID_ENTIDAD)
-                           WHEN 'PACIENTE'     THEN (SELECT p.NOMBRE || ' ' || p.APELLIDO FROM PACIENTES p WHERE p.ID_PACIENTE = u.ID_ENTIDAD)
-                           WHEN 'FARMACEUTICO' THEN (SELECT f.NOMBRE || ' ' || f.APELLIDO FROM FARMACEUTICOS f WHERE f.ID_FARMACEUTICO = u.ID_ENTIDAD)
+                           WHEN 'MEDICO'       THEN (SELECT m.NOMBRE || ' ' || m.APELLIDO FROM TBL_MEDICOS m WHERE m.ID_MEDICO = u.ID_ENTIDAD)
+                           WHEN 'PACIENTE'     THEN (SELECT p.NOMBRE || ' ' || p.APELLIDO FROM TBL_PACIENTES p WHERE p.ID_PACIENTE = u.ID_ENTIDAD)
+                           WHEN 'FARMACEUTICO' THEN (SELECT f.NOMBRE || ' ' || f.APELLIDO FROM TBL_FARMACEUTICOS f WHERE f.ID_FARMACEUTICO = u.ID_ENTIDAD)
                          END AS NOMBRE
-                    FROM USUARIOS u JOIN ROLES r ON r.ID_ROL = u.ID_ROL
+                    FROM TBL_USUARIOS u JOIN TBL_ROLES r ON r.ID_ROL = u.ID_ROL
                 ) WHERE 1 = 1
                 """);
         List<Object> args = new ArrayList<>();
@@ -60,14 +60,14 @@ public class UsuarioController {
 
     @GetMapping("/especialidades")
     public List<EspecialidadDto> especialidades() {
-        return jdbc.query("SELECT ID_PARAMETRO, VALOR FROM PARAMETRICA_TIPOS WHERE NOMBRE = 'ESPECIALIDAD' ORDER BY VALOR",
+        return jdbc.query("SELECT ID_PARAMETRO, VALOR FROM TBL_PARAMETRICA_TIPOS WHERE NOMBRE = 'ESPECIALIDAD' ORDER BY VALOR",
                 (rs, i) -> new EspecialidadDto(rs.getLong(1), rs.getString(2)));
     }
 
     @PostMapping("/usuarios")
     public ResponseEntity<?> crear(@RequestBody CrearRequest r, @AuthenticationPrincipal AuthUser user) {
         Long id = jdbc.execute((ConnectionCallback<Long>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_USUARIOS.CREAR_PERSONAL(?,?,?,?,?,?,?,?,?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_USUARIOS.PRO_CREAR_PERSONAL(?,?,?,?,?,?,?,?,?,?,?)}")) {
                 cs.setString(1, r.rol());
                 cs.setString(2, r.documento());
                 cs.setString(3, r.nombre());
@@ -89,7 +89,7 @@ public class UsuarioController {
     @PutMapping("/usuarios/{id}/estado")
     public ResponseEntity<?> estado(@PathVariable Long id, @RequestBody EstadoRequest r, @AuthenticationPrincipal AuthUser user) {
         jdbc.execute((ConnectionCallback<Void>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_USUARIOS.CAMBIAR_ESTADO(?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_USUARIOS.PRO_CAMBIAR_ESTADO(?,?,?)}")) {
                 cs.setLong(1, id);
                 cs.setString(2, r.estado());
                 cs.setLong(3, user.idUsuario());
@@ -103,7 +103,7 @@ public class UsuarioController {
     @PutMapping("/usuarios/{id}/clave")
     public ResponseEntity<?> clave(@PathVariable Long id, @RequestBody ClaveRequest r, @AuthenticationPrincipal AuthUser user) {
         jdbc.execute((ConnectionCallback<Void>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_USUARIOS.RESTABLECER_CLAVE(?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_USUARIOS.PRO_RESTABLECER_CLAVE(?,?,?)}")) {
                 cs.setLong(1, id);
                 cs.setString(2, r.password());
                 cs.setLong(3, user.idUsuario());

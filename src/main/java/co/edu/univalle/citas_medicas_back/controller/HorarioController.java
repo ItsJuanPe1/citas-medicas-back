@@ -56,10 +56,10 @@ public class HorarioController {
                 SELECT a.ID_AGENDA, a.FECHA_HORA_INICIO, a.FECHA_HORA_FIN, est.VALOR AS ESTADO,
                        COUNT(CASE WHEN ce.VALOR <> 'CANCELADA' THEN 1 END) AS CITAS,
                        COUNT(c.ID_CITA) AS CITAS_TOTALES
-                  FROM AGENDAS_MEDICOS a
-                  JOIN PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = a.ID_ESTADO
-                  LEFT JOIN CITAS_MEDICAS c        ON c.ID_AGENDA = a.ID_AGENDA
-                  LEFT JOIN PARAMETRICA_TIPOS ce   ON ce.ID_PARAMETRO = c.ID_ESTADO
+                  FROM TBL_AGENDAS_MEDICOS a
+                  JOIN TBL_PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = a.ID_ESTADO
+                  LEFT JOIN TBL_CITAS_MEDICAS c        ON c.ID_AGENDA = a.ID_AGENDA
+                  LEFT JOIN TBL_PARAMETRICA_TIPOS ce   ON ce.ID_PARAMETRO = c.ID_ESTADO
                  WHERE a.ID_MEDICO = ?
                    AND a.FECHA_HORA_FIN > LOCALTIMESTAMP
                  GROUP BY a.ID_AGENDA, a.FECHA_HORA_INICIO, a.FECHA_HORA_FIN, est.VALOR
@@ -85,7 +85,7 @@ public class HorarioController {
                 SELECT DIA_SEMANA,
                        TO_CHAR(FECHA_HORA_INICIO, 'HH24:MI') AS DESDE,
                        TO_CHAR(FECHA_HORA_FIN, 'HH24:MI')    AS HASTA
-                  FROM AGENDAS_MEDICOS
+                  FROM TBL_AGENDAS_MEDICOS
                  WHERE ID_MEDICO = ? AND FECHA_HORA_FIN > LOCALTIMESTAMP
                  GROUP BY DIA_SEMANA, TO_CHAR(FECHA_HORA_INICIO, 'HH24:MI'), TO_CHAR(FECHA_HORA_FIN, 'HH24:MI')
                 HAVING COUNT(DISTINCT TRUNC(CAST(FECHA_HORA_INICIO AS DATE))) >= 2
@@ -105,7 +105,7 @@ public class HorarioController {
                 req.bloques().stream().map(b -> b.dia() + "~" + b.desde() + "~" + b.hasta()).toList());
 
         Long creadas = jdbc.execute((ConnectionCallback<Long>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_AGENDAS.GUARDAR_HORARIO_SEMANAL(?,?,?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_AGENDAS.PRO_GUARDAR_HORARIO_SEMANAL(?,?,?,?,?)}")) {
                 cs.setLong(1, medico);
                 cs.setString(2, bloques);
                 cs.setLong(3, user.idUsuario());
@@ -130,7 +130,7 @@ public class HorarioController {
         Timestamp fin = Timestamp.valueOf(req.fecha().atTime(req.hasta()));
 
         Long idAgenda = jdbc.execute((ConnectionCallback<Long>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_AGENDAS.CREAR_AGENDA(?,?,?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_AGENDAS.PRO_CREAR_AGENDA(?,?,?,?,?)}")) {
                 cs.setLong(1, medico);
                 cs.setTimestamp(2, inicio);
                 cs.setTimestamp(3, fin);
@@ -150,7 +150,7 @@ public class HorarioController {
         if ("MEDICO".equals(user.rol()) && soloDe == null) return sinMedico();
 
         jdbc.execute((ConnectionCallback<Void>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_AGENDAS.ELIMINAR_AGENDA(?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_AGENDAS.PRO_ELIMINAR_AGENDA(?,?,?)}")) {
                 cs.setLong(1, idAgenda);
                 cs.setLong(2, user.idUsuario());
                 if (soloDe == null) cs.setNull(3, Types.NUMERIC); else cs.setLong(3, soloDe);

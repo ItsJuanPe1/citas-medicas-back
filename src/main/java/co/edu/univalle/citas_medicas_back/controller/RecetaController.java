@@ -34,9 +34,9 @@ public class RecetaController {
         return jdbc.query("""
                 SELECT m.ID_MEDICAMENTO, m.NOMBRE, m.PRESENTACION, t.VALOR AS TIPO,
                        NVL(s.CANTIDAD_DISPONIBLE, 0) AS DISPONIBLE
-                  FROM MEDICAMENTOS m
-                  JOIN PARAMETRICA_TIPOS t ON t.ID_PARAMETRO = m.ID_TIPO_MEDICAMENTO
-                  LEFT JOIN STOCK_FARMACIA s ON s.ID_MEDICAMENTO = m.ID_MEDICAMENTO
+                  FROM TBL_MEDICAMENTOS m
+                  JOIN TBL_PARAMETRICA_TIPOS t ON t.ID_PARAMETRO = m.ID_TIPO_MEDICAMENTO
+                  LEFT JOIN TBL_STOCK_FARMACIA s ON s.ID_MEDICAMENTO = m.ID_MEDICAMENTO
                  ORDER BY m.NOMBRE
                 """,
                 (rs, i) -> new MedicamentoDto(rs.getLong("ID_MEDICAMENTO"), rs.getString("NOMBRE"),
@@ -67,7 +67,7 @@ public class RecetaController {
                 .collect(Collectors.joining("|"));
 
         Long idReceta = jdbc.execute((ConnectionCallback<Long>) con -> {
-            try (CallableStatement cs = con.prepareCall("{call PKG_GESTION_MEDICAMENTOS.PRESCRIBIR_RECETA(?,?,?,?,?)}")) {
+            try (CallableStatement cs = con.prepareCall("{call PKG_GESTION_MEDICAMENTOS.PRO_PRESCRIBIR_RECETA(?,?,?,?,?)}")) {
                 cs.setLong(1, req.idHistoria());
                 cs.setString(2, items);
                 cs.setLong(3, user.idUsuario());

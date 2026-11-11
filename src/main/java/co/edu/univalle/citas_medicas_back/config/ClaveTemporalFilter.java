@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Mientras la clave sea temporal (USUARIOS.DEBE_CAMBIAR_CLAVE = 'S') el usuario solo puede usar /api/cuenta/**
+ * Mientras la clave sea temporal (TBL_USUARIOS.DEBE_CAMBIAR_CLAVE = 'S') el usuario solo puede usar /api/cuenta/**
  * (ver el estado y cambiar la clave). Es un @Component: Spring Boot lo registra solo, no hay que tocar SecurityConfig.
  */
 @Component
@@ -34,7 +34,7 @@ public class ClaveTemporalFilter extends OncePerRequestFilter {
         if (auth != null && auth.getPrincipal() instanceof AuthUser user
                 && path.startsWith("/api/") && !path.startsWith("/api/cuenta")) {
             Integer temporal = jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM USUARIOS WHERE ID_USUARIO = ? AND DEBE_CAMBIAR_CLAVE = 'S'",
+                    "SELECT COUNT(*) FROM TBL_USUARIOS WHERE ID_USUARIO = ? AND DEBE_CAMBIAR_CLAVE = 'S'",
                     Integer.class, user.idUsuario());
             if (temporal != null && temporal > 0) {
                 res.setStatus(HttpServletResponse.SC_FORBIDDEN);

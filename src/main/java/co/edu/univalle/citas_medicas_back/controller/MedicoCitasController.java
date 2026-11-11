@@ -42,15 +42,15 @@ public class MedicoCitasController {
                        c.FECHA_HORA_INICIO, est.VALOR AS ESTADO, h.DIAGNOSTICO, h.NOTAS_MEDICAS,
                        h.ID_HISTORIA, re.VALOR AS ESTADO_RECETA,
                        (SELECT LISTAGG(m.NOMBRE || ' x' || d.CANTIDAD, ', ') WITHIN GROUP (ORDER BY d.ID_DETALLE)
-                          FROM DETALLE_RECETA d JOIN MEDICAMENTOS m ON m.ID_MEDICAMENTO = d.ID_MEDICAMENTO
+                          FROM TBL_DETALLE_RECETA d JOIN TBL_MEDICAMENTOS m ON m.ID_MEDICAMENTO = d.ID_MEDICAMENTO
                          WHERE d.ID_RECETA = r.ID_RECETA) AS RECETA
-                  FROM CITAS_MEDICAS c
-                  JOIN AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
-                  JOIN PACIENTES p           ON p.ID_PACIENTE = c.ID_PACIENTE
-                  JOIN PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = c.ID_ESTADO
-                  LEFT JOIN HISTORIA_CLINICA h ON h.ID_CITA = c.ID_CITA
-                  LEFT JOIN RECETAS_MEDICAS r  ON r.ID_HISTORIA = h.ID_HISTORIA
-                  LEFT JOIN PARAMETRICA_TIPOS re ON re.ID_PARAMETRO = r.ID_ESTADO
+                  FROM TBL_CITAS_MEDICAS c
+                  JOIN TBL_AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
+                  JOIN TBL_PACIENTES p           ON p.ID_PACIENTE = c.ID_PACIENTE
+                  JOIN TBL_PARAMETRICA_TIPOS est ON est.ID_PARAMETRO = c.ID_ESTADO
+                  LEFT JOIN TBL_HISTORIA_CLINICA h ON h.ID_CITA = c.ID_CITA
+                  LEFT JOIN TBL_RECETAS_MEDICAS r  ON r.ID_HISTORIA = h.ID_HISTORIA
+                  LEFT JOIN TBL_PARAMETRICA_TIPOS re ON re.ID_PARAMETRO = r.ID_ESTADO
                  WHERE a.ID_MEDICO = ?
                 """
                 + (historial
