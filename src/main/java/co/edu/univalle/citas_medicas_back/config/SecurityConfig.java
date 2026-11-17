@@ -43,13 +43,17 @@ public class SecurityConfig {
                 // Administracion: consultas de solo lectura
                 .requestMatchers("/api/admin/citas").hasAnyRole("SUPERADMIN", "GERENTE")
                 .requestMatchers("/api/admin/auditoria").hasRole("SUPERADMIN")
+                .requestMatchers("/api/admin/citas/cancelacion-masiva", "/api/admin/citas/cancelacion-masiva/**").hasRole("SUPERADMIN")
+                .requestMatchers("/api/reportes/**").hasAnyRole("GERENTE", "SUPERADMIN")
                 // Gestion de usuarios (alta de personal, estado, clave)
                 .requestMatchers("/api/admin/usuarios", "/api/admin/usuarios/**", "/api/admin/especialidades").hasRole("SUPERADMIN")
                 // Historias clinicas (HU03, HU04): registrar consulta
                 .requestMatchers("/api/historias", "/api/historias/**").hasAnyRole("MEDICO", "SUPERADMIN")
                 // Horarios del medico (franjas de cita)
                 .requestMatchers("/api/horario", "/api/horario/**").hasAnyRole("MEDICO", "SUPERADMIN")
-                // Medicamentos y farmacia (HU05, HU06): pendiente
+                // Farmacia: pendientes, entregas y stock (HU05, HU06)
+                .requestMatchers("/api/farmacia/**").hasAnyRole("FARMACEUTICO", "SUPERADMIN")
+                .requestMatchers("/api/recetas", "/api/recetas/**", "/api/medicamentos").hasAnyRole("MEDICO", "SUPERADMIN")
                 // ==========================================================
 
                 // Todo lo demas: cualquier usuario con sesion

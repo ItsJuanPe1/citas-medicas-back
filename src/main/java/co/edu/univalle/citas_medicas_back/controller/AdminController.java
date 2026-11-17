@@ -81,7 +81,7 @@ public class AdminController {
     @GetMapping("/auditoria")
     public List<LogDto> auditoria() {
         List<LogDto> crudos = jdbc.query("""
-                SELECT l.ID_LOG, u.USERNAME, l.ACCION, l.TABLA_AFECTADA, l.ID_REGISTRO,
+                SELECT l.ID_LOG, NVL(u.USERNAME, CASE WHEN l.ID_USUARIO = 0 THEN 'Sistema' END) AS USERNAME, l.ACCION, l.TABLA_AFECTADA, l.ID_REGISTRO,
                        l.VALOR_ANTES, l.VALOR_DESPUES, l.FECHA_HORA
                   FROM TBL_LOG_AUDITORIAS l
                   LEFT JOIN TBL_USUARIOS u ON u.ID_USUARIO = l.ID_USUARIO

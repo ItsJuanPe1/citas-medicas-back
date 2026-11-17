@@ -44,7 +44,7 @@ public class HistoriaController {
 
         Long idHistoria = jdbc.execute((ConnectionCallback<Long>) con -> {
             try (CallableStatement cs = con
-                    .prepareCall("{call PKG_HISTORIAS_CLINICAS.REGISTRAR_CONSULTA(?,?,?,?,?,?)}")) {
+                    .prepareCall("{call PKG_HISTORIAS_CLINICAS.PRO_REGISTRAR_CONSULTA(?,?,?,?,?,?)}")) {
                 cs.setLong(1, req.idCita());
                 cs.setString(2, req.diagnostico());
                 cs.setString(3, req.notas());
