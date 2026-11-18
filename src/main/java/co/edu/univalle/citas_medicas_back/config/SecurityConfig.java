@@ -43,6 +43,7 @@ public class SecurityConfig {
                 // Administracion: consultas de solo lectura
                 .requestMatchers("/api/admin/citas").hasAnyRole("SUPERADMIN", "GERENTE")
                 .requestMatchers("/api/admin/auditoria").hasRole("SUPERADMIN")
+                .requestMatchers("/api/admin/auditoria/**").hasRole("SUPERADMIN")
                 .requestMatchers("/api/admin/citas/cancelacion-masiva", "/api/admin/citas/cancelacion-masiva/**").hasRole("SUPERADMIN")
                 .requestMatchers("/api/reportes/**").hasAnyRole("GERENTE", "SUPERADMIN")
                 // Gestion de usuarios (alta de personal, estado, clave)
