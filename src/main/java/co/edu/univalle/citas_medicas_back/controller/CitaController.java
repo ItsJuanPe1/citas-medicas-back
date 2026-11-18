@@ -60,7 +60,7 @@ public class CitaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("idCita", idCita));
     }
 
-    /** Citas de un paciente. El paciente ve las suyas; los demas roles pasan idPaciente. */
+    /** Citas de un paciente. El motivo es la explicacion de la ultima cancelacion o reprogramacion (si la hubo). El paciente ve las suyas; los demas roles pasan idPaciente. */
     @GetMapping
     public ResponseEntity<?> listar(@RequestParam(required = false) Long idPaciente,
                                     @AuthenticationPrincipal AuthUser user) {
@@ -69,10 +69,12 @@ public class CitaController {
 
         List<CitaDto> citas = jdbc.query("""
                 SELECT c.ID_CITA, m.NOMBRE, m.APELLIDO, esp.VALOR AS ESPECIALIDAD,
-                       c.FECHA_HORA_INICIO, est.VALOR AS ESTADO, (SELECT REGEXP_SUBSTR(l.VALOR_DESPUES, 'motivo=(.*)$', 1, 1, 'n', 1)
+                       c.FECHA_HORA_INICIO, est.VALOR AS ESTADO, (SELECT MAX(REGEXP_SUBSTR(l.VALOR_DESPUES, 'motivo=(.*)$', 1, 1, 'n', 1))
+                                       KEEP (DENSE_RANK LAST ORDER BY l.ID_LOG)
                           FROM TBL_LOG_AUDITORIAS l
-                         WHERE l.TABLA_AFECTADA = 'TBL_CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
-                           AND l.ID_REGISTRO = c.ID_CITA AND ROWNUM = 1) AS MOTIVO_CANCELACION
+                         WHERE l.TABLA_AFECTADA = 'TBL_CITAS_MEDICAS'
+                           AND l.ACCION IN ('CANCELAR_CITA', 'REPROGRAMAR_CITA')
+                           AND l.ID_REGISTRO = c.ID_CITA) AS MOTIVO_CANCELACION
                   FROM TBL_CITAS_MEDICAS c
                   JOIN TBL_AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
                   JOIN TBL_MEDICOS m             ON m.ID_MEDICO = a.ID_MEDICO
