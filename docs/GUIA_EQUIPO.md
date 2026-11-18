@@ -15,6 +15,7 @@ Sistema de citas médicas (Oracle + PL/SQL, Spring Boot, React). Esta guía expl
 | HU05 Recetas y farmacia | `PKG_GESTION_MEDICAMENTOS`: recetar (hasta 24 horas después de la consulta), entregar (parcial si falta stock) y reponer stock. `TRG_DETALLE_ESTADO_RECETA` calcula el estado de la receta. |
 | HU06 Stock mínimo | `TRG_STOCK_MINIMO`: al bajar el stock por debajo del mínimo deja `ALERTA_STOCK_MINIMO` en la bitácora (usuario Sistema). Farmacia avisa en pantalla y hay una pantalla Stock con reposición. |
 | HU07 Control de acceso | `PKG_SEGURIDAD` + política `POL_HISTORIA_CLINICA` (`DBMS_RLS`): el médico solo lee historias de sus pacientes, el paciente las suyas, recepción ninguna. Roles de Oracle `ROLE_MEDICO` y `ROLE_RECEPCION`. |
+| Auditoría por triggers | Historias, recetas, detalle de receta, stock y medicamentos quedan auditados por triggers (`TRG_AUD_*` y `TRG_HISTORIA_AUDITORIA`), aunque el cambio se haga con SQL directo. |
 | HU08 Auditoría de historias | `TRG_HISTORIA_AUDITORIA`: cada cambio de diagnóstico o notas, o eliminación, queda en la bitácora con el valor anterior y el nuevo, el usuario de la aplicación y el usuario Oracle. |
 | Horarios, usuarios, perfil | Horario semanal del médico (`PKG_AGENDAS`, 52 semanas, sin tabla nueva), alta de personal y pacientes (`PKG_USUARIOS`), perfil (`PKG_PERFILES`), estado NO_ASISTIO (job). |
 
