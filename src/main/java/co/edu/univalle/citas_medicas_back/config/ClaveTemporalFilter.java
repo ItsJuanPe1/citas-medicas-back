@@ -12,18 +12,47 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Mientras la clave sea temporal (TBL_USUARIOS.DEBE_CAMBIAR_CLAVE = 'S') el usuario solo puede usar /api/cuenta/**
- * (ver el estado y cambiar la clave). Es un @Component: Spring Boot lo registra solo, no hay que tocar SecurityConfig.
+ * (ver el estado y cambiar la clave).
+ * Cachea el estado por usuario con TTL corto e invalidacion explicita al cambiar/restablecer clave,
+ * evitando una consulta (y un PRO_ESTABLECER_CONTEXTO) extra en cada peticion autenticada.
  */
 @Component
 public class ClaveTemporalFilter extends OncePerRequestFilter {
 
+    private static final long TTL_MS = 120_000L; // 2 minutos
+
+    private record CacheEntry(boolean temporal, long expiraEn) {}
+
     private final JdbcTemplate jdbc;
+    private final ConcurrentHashMap<Long, CacheEntry> cache = new ConcurrentHashMap<>();
 
     public ClaveTemporalFilter(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
+    }
+
+    /** Invalida el cache cuando el usuario cambia su clave o un admin la restablece. */
+    public void invalidar(Long idUsuario) {
+        if (idUsuario != null) {
+            cache.remove(idUsuario);
+        }
+    }
+
+    private boolean debeCambiarClave(long idUsuario) {
+        long ahora = System.currentTimeMillis();
+        CacheEntry entry = cache.get(idUsuario);
+        if (entry != null && ahora < entry.expiraEn()) {
+            return entry.temporal();
+        }
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM TBL_USUARIOS WHERE ID_USUARIO = ? AND DEBE_CAMBIAR_CLAVE = 'S'",
+                Integer.class, idUsuario);
+        boolean temporal = count != null && count > 0;
+        cache.put(idUsuario, new CacheEntry(temporal, ahora + TTL_MS));
+        return temporal;
     }
 
     @Override
@@ -33,10 +62,7 @@ public class ClaveTemporalFilter extends OncePerRequestFilter {
         String path = req.getRequestURI();
         if (auth != null && auth.getPrincipal() instanceof AuthUser user
                 && path.startsWith("/api/") && !path.startsWith("/api/cuenta")) {
-            Integer temporal = jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM TBL_USUARIOS WHERE ID_USUARIO = ? AND DEBE_CAMBIAR_CLAVE = 'S'",
-                    Integer.class, user.idUsuario());
-            if (temporal != null && temporal > 0) {
+            if (debeCambiarClave(user.idUsuario())) {
                 res.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 res.setContentType("application/json;charset=UTF-8");
                 res.getOutputStream().write(

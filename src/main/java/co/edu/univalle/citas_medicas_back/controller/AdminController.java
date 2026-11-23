@@ -2,6 +2,7 @@ package co.edu.univalle.citas_medicas_back.controller;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -46,10 +47,13 @@ public class AdminController {
         StringBuilder sql = new StringBuilder("""
                 SELECT c.ID_CITA, p.NOMBRE || ' ' || p.APELLIDO AS PACIENTE, p.DOCUMENTO,
                        m.NOMBRE || ' ' || m.APELLIDO AS MEDICO, esp.VALOR AS ESPECIALIDAD,
-                       c.FECHA_HORA_INICIO, est.VALOR AS ESTADO, (SELECT REGEXP_SUBSTR(l.VALOR_DESPUES, 'motivo=(.*)$', 1, 1, 'n', 1)
-                          FROM TBL_LOG_AUDITORIAS l
-                         WHERE l.TABLA_AFECTADA = 'TBL_CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
-                           AND l.ID_REGISTRO = c.ID_CITA AND ROWNUM = 1) AS MOTIVO_CANCELACION
+                       c.FECHA_HORA_INICIO, est.VALOR AS ESTADO,
+                       CASE WHEN est.VALOR = 'CANCELADA' THEN
+                         (SELECT REGEXP_SUBSTR(l.VALOR_DESPUES, 'motivo=(.*)$', 1, 1, 'n', 1)
+                            FROM TBL_LOG_AUDITORIAS l
+                           WHERE l.TABLA_AFECTADA = 'TBL_CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
+                             AND l.ID_REGISTRO = c.ID_CITA AND ROWNUM = 1)
+                       END AS MOTIVO_CANCELACION
                   FROM TBL_CITAS_MEDICAS c
                   JOIN TBL_PACIENTES p           ON p.ID_PACIENTE = c.ID_PACIENTE
                   JOIN TBL_AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
@@ -79,6 +83,7 @@ public class AdminController {
             DateTimeFormatter.ofPattern("EEE d MMM HH:mm", Locale.forLanguageTag("es-CO"));
 
     @GetMapping("/auditoria")
+    @Transactional(readOnly = true)
     public List<LogDto> auditoria() {
         List<LogDto> crudos = jdbc.query("""
                 SELECT l.ID_LOG, NVL(u.USERNAME, CASE WHEN l.ID_USUARIO = 0 THEN 'Sistema' END) AS USERNAME, l.ACCION, l.TABLA_AFECTADA, l.ID_REGISTRO,

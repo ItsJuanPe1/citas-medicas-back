@@ -30,6 +30,15 @@ public class StockController {
     @GetMapping
     public List<StockDto> listar(@RequestParam(required = false) String q) {
         String filtro = q == null ? "" : q.trim().toLowerCase();
+        if (filtro.isEmpty()) {
+            return jdbc.query("""
+                    SELECT m.ID_MEDICAMENTO, m.NOMBRE, m.PRESENTACION, s.CANTIDAD_DISPONIBLE, s.CANTIDAD_MINIMA
+                      FROM TBL_STOCK_FARMACIA s JOIN TBL_MEDICAMENTOS m ON m.ID_MEDICAMENTO = s.ID_MEDICAMENTO
+                     ORDER BY (CASE WHEN s.CANTIDAD_DISPONIBLE < s.CANTIDAD_MINIMA THEN 0 ELSE 1 END), m.NOMBRE
+                     FETCH FIRST 300 ROWS ONLY
+                    """,
+                    (rs, i) -> new StockDto(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getLong(4), rs.getLong(5)));
+        }
         return jdbc.query("""
                 SELECT m.ID_MEDICAMENTO, m.NOMBRE, m.PRESENTACION, s.CANTIDAD_DISPONIBLE, s.CANTIDAD_MINIMA
                   FROM TBL_STOCK_FARMACIA s JOIN TBL_MEDICAMENTOS m ON m.ID_MEDICAMENTO = s.ID_MEDICAMENTO

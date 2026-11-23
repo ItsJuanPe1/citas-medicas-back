@@ -19,7 +19,7 @@ public class HealthController {
 
     @GetMapping("/health")
     public Map<String, Object> health() {
-        Integer roles = jdbc.queryForObject("SELECT COUNT(*) FROM ROLES", Integer.class);
+        Integer roles = jdbc.queryForObject("SELECT COUNT(*) FROM TBL_ROLES", Integer.class);
         return Map.of("estado", "ok", "roles_en_bd", roles);
     }
 }

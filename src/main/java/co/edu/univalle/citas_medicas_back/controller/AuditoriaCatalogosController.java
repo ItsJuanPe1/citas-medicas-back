@@ -1,6 +1,7 @@
 package co.edu.univalle.citas_medicas_back.controller;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,6 +26,7 @@ public class AuditoriaCatalogosController {
     }
 
     @GetMapping
+    @Transactional(readOnly = true)
     public Catalogos catalogos() {
         Map<Long, String> estados = new HashMap<>();
         jdbc.query("SELECT ID_PARAMETRO, VALOR FROM TBL_PARAMETRICA_TIPOS", rs -> {

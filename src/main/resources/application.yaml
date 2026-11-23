@@ -1,12 +1,34 @@
 spring:
   config:
-    import: optional:file:.env[.properties]
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:citas-medicas-back/.env[.properties]
   application:
     name: citas-medicas-back
+  threads:
+    virtual:
+      enabled: true
+  task:
+    scheduling:
+      pool:
+        size: 2
+  jdbc:
+    template:
+      fetch-size: 100
   datasource:
     url: jdbc:oracle:thin:@//localhost:1521/XE
     username: PROYECTOPLSQL
     password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 12
+      minimum-idle: 2
+      connection-timeout: 10000
+      data-source-properties:
+        oracle.jdbc.implicitStatementCacheSize: 40
+        defaultRowPrefetch: 100
+server:
+  compression:
+    enabled: true
 app:
   jwt:
     secret: ${JWT_SECRET}
