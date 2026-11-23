@@ -24,7 +24,19 @@ public class PacienteController {
     /** Busqueda para la recepcionista: por documento, nombre o apellido. */
     @GetMapping
     public List<PacienteDto> buscar(@RequestParam String q) {
-        String patron = "%" + q.trim().toLowerCase() + "%";
+        String limpio = q.trim();
+        if (limpio.matches("\\d+")) {
+            return jdbc.query("""
+                    SELECT ID_PACIENTE, DOCUMENTO, NOMBRE, APELLIDO
+                    FROM TBL_PACIENTES
+                    WHERE DOCUMENTO LIKE ?
+                    ORDER BY APELLIDO, NOMBRE
+                    FETCH FIRST 20 ROWS ONLY
+                    """,
+                    (rs, i) -> new PacienteDto(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4)),
+                    limpio + "%");
+        }
+        String patron = "%" + limpio.toLowerCase() + "%";
         return jdbc.query("""
                 SELECT ID_PACIENTE, DOCUMENTO, NOMBRE, APELLIDO
                 FROM TBL_PACIENTES

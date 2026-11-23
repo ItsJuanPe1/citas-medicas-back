@@ -1,6 +1,7 @@
 package co.edu.univalle.citas_medicas_back.controller;
 
 import co.edu.univalle.citas_medicas_back.config.AuthUser;
+import co.edu.univalle.citas_medicas_back.config.ClaveTemporalFilter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.ConnectionCallback;
@@ -27,33 +28,46 @@ public class UsuarioController {
     public record ClaveRequest(String password) {}
 
     private final JdbcTemplate jdbc;
+    private final ClaveTemporalFilter claveTemporalFilter;
 
-    public UsuarioController(JdbcTemplate jdbc) {
+    public UsuarioController(JdbcTemplate jdbc, ClaveTemporalFilter claveTemporalFilter) {
         this.jdbc = jdbc;
+        this.claveTemporalFilter = claveTemporalFilter;
     }
 
     @GetMapping("/usuarios")
     public List<UsuarioDto> listar(@RequestParam(required = false) String q) {
         StringBuilder sql = new StringBuilder("""
-                SELECT * FROM (
-                  SELECT u.ID_USUARIO, u.USERNAME, r.NOMBRE AS ROL, u.ESTADO,
-                         CASE r.NOMBRE
-                           WHEN 'MEDICO'       THEN (SELECT m.NOMBRE || ' ' || m.APELLIDO FROM TBL_MEDICOS m WHERE m.ID_MEDICO = u.ID_ENTIDAD)
-                           WHEN 'PACIENTE'     THEN (SELECT p.NOMBRE || ' ' || p.APELLIDO FROM TBL_PACIENTES p WHERE p.ID_PACIENTE = u.ID_ENTIDAD)
-                           WHEN 'FARMACEUTICO' THEN (SELECT f.NOMBRE || ' ' || f.APELLIDO FROM TBL_FARMACEUTICOS f WHERE f.ID_FARMACEUTICO = u.ID_ENTIDAD)
-                         END AS NOMBRE
-                    FROM TBL_USUARIOS u JOIN TBL_ROLES r ON r.ID_ROL = u.ID_ROL
-                ) WHERE 1 = 1
+                SELECT u.ID_USUARIO, u.USERNAME, r.NOMBRE AS ROL, u.ESTADO,
+                       CASE r.NOMBRE
+                         WHEN 'MEDICO'       THEN CASE WHEN m.ID_MEDICO IS NOT NULL THEN m.NOMBRE || ' ' || m.APELLIDO END
+                         WHEN 'PACIENTE'     THEN CASE WHEN p.ID_PACIENTE IS NOT NULL THEN p.NOMBRE || ' ' || p.APELLIDO END
+                         WHEN 'FARMACEUTICO' THEN CASE WHEN f.ID_FARMACEUTICO IS NOT NULL THEN f.NOMBRE || ' ' || f.APELLIDO END
+                       END AS NOMBRE
+                  FROM TBL_USUARIOS u
+                  JOIN TBL_ROLES r              ON r.ID_ROL = u.ID_ROL
+                  LEFT JOIN TBL_MEDICOS m       ON r.NOMBRE = 'MEDICO'       AND m.ID_MEDICO = u.ID_ENTIDAD
+                  LEFT JOIN TBL_PACIENTES p     ON r.NOMBRE = 'PACIENTE'     AND p.ID_PACIENTE = u.ID_ENTIDAD
+                  LEFT JOIN TBL_FARMACEUTICOS f ON r.NOMBRE = 'FARMACEUTICO' AND f.ID_FARMACEUTICO = u.ID_ENTIDAD
+                 WHERE 1 = 1
                 """);
         List<Object> args = new ArrayList<>();
         if (q != null && !q.isBlank()) {
-            sql.append(" AND (LOWER(USERNAME) LIKE ? OR LOWER(NOMBRE) LIKE ? OR ROL LIKE ?) ");
+            sql.append("""
+                     AND (LOWER(u.USERNAME) LIKE ?
+                          OR LOWER(CASE r.NOMBRE
+                               WHEN 'MEDICO'       THEN CASE WHEN m.ID_MEDICO IS NOT NULL THEN m.NOMBRE || ' ' || m.APELLIDO END
+                               WHEN 'PACIENTE'     THEN CASE WHEN p.ID_PACIENTE IS NOT NULL THEN p.NOMBRE || ' ' || p.APELLIDO END
+                               WHEN 'FARMACEUTICO' THEN CASE WHEN f.ID_FARMACEUTICO IS NOT NULL THEN f.NOMBRE || ' ' || f.APELLIDO END
+                             END) LIKE ?
+                          OR r.NOMBRE LIKE ?)
+                    """);
             String like = "%" + q.trim().toLowerCase() + "%";
             args.add(like);
             args.add(like);
             args.add("%" + q.trim().toUpperCase() + "%");
         }
-        sql.append(" ORDER BY ID_USUARIO DESC FETCH FIRST 100 ROWS ONLY");
+        sql.append(" ORDER BY u.ID_USUARIO DESC FETCH FIRST 100 ROWS ONLY");
         return jdbc.query(sql.toString(), (rs, i) -> new UsuarioDto(rs.getLong("ID_USUARIO"), rs.getString("USERNAME"),
                 rs.getString("ROL"), rs.getString("NOMBRE"), rs.getString("ESTADO")), args.toArray());
     }
@@ -111,6 +125,7 @@ public class UsuarioController {
                 return null;
             }
         });
+        claveTemporalFilter.invalidar(id);
         return ResponseEntity.ok(Map.of("mensaje", "Contrasena restablecida"));
     }
 }

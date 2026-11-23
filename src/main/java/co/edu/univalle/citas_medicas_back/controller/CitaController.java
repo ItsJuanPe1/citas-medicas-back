@@ -69,10 +69,13 @@ public class CitaController {
 
         List<CitaDto> citas = jdbc.query("""
                 SELECT c.ID_CITA, m.NOMBRE, m.APELLIDO, esp.VALOR AS ESPECIALIDAD,
-                       c.FECHA_HORA_INICIO, est.VALOR AS ESTADO, (SELECT REGEXP_SUBSTR(l.VALOR_DESPUES, 'motivo=(.*)$', 1, 1, 'n', 1)
-                          FROM TBL_LOG_AUDITORIAS l
-                         WHERE l.TABLA_AFECTADA = 'TBL_CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
-                           AND l.ID_REGISTRO = c.ID_CITA AND ROWNUM = 1) AS MOTIVO_CANCELACION
+                       c.FECHA_HORA_INICIO, est.VALOR AS ESTADO,
+                       CASE WHEN est.VALOR = 'CANCELADA' THEN
+                         (SELECT REGEXP_SUBSTR(l.VALOR_DESPUES, 'motivo=(.*)$', 1, 1, 'n', 1)
+                            FROM TBL_LOG_AUDITORIAS l
+                           WHERE l.TABLA_AFECTADA = 'TBL_CITAS_MEDICAS' AND l.ACCION = 'CANCELAR_CITA'
+                             AND l.ID_REGISTRO = c.ID_CITA AND ROWNUM = 1)
+                       END AS MOTIVO_CANCELACION
                   FROM TBL_CITAS_MEDICAS c
                   JOIN TBL_AGENDAS_MEDICOS a     ON a.ID_AGENDA = c.ID_AGENDA
                   JOIN TBL_MEDICOS m             ON m.ID_MEDICO = a.ID_MEDICO

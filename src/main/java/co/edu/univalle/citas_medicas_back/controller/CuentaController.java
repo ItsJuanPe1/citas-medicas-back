@@ -1,6 +1,7 @@
 package co.edu.univalle.citas_medicas_back.controller;
 
 import co.edu.univalle.citas_medicas_back.config.AuthUser;
+import co.edu.univalle.citas_medicas_back.config.ClaveTemporalFilter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,9 +19,11 @@ public class CuentaController {
     public record CambioClaveRequest(String actual, String nueva) {}
 
     private final JdbcTemplate jdbc;
+    private final ClaveTemporalFilter claveTemporalFilter;
 
-    public CuentaController(JdbcTemplate jdbc) {
+    public CuentaController(JdbcTemplate jdbc, ClaveTemporalFilter claveTemporalFilter) {
         this.jdbc = jdbc;
+        this.claveTemporalFilter = claveTemporalFilter;
     }
 
     @GetMapping
@@ -41,6 +44,7 @@ public class CuentaController {
                 return null;
             }
         });
+        claveTemporalFilter.invalidar(user.idUsuario());
         return ResponseEntity.ok(Map.of("ok", true));
     }
 }
